@@ -6,6 +6,7 @@
 const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const DB_PATH = path.join(__dirname, '..', 'assets', 'db', 'kalima.db');
 const GAPS_PATH = path.join(__dirname, 'gaps-report.json');
@@ -112,6 +113,28 @@ async function main() {
     const report = JSON.parse(fs.readFileSync(GAPS_PATH, 'utf8'));
     check('Gaps report has structure', report.totalWords > 0 && Array.isArray(report.gaps),
       'Invalid gaps report structure');
+  }
+
+  // Check 9: Source data checksums file exists and quran-uthmani.json matches
+  const checksumsPath = path.join(__dirname, 'data', 'raw', 'checksums.sha256');
+  check('checksums.sha256 exists', fs.existsSync(checksumsPath), `${checksumsPath} not found`);
+
+  if (fs.existsSync(checksumsPath)) {
+    const quranPath = path.join(__dirname, 'data', 'raw', 'quran-uthmani.json');
+    if (fs.existsSync(quranPath)) {
+      const checksumContent = fs.readFileSync(checksumsPath, 'utf8');
+      const quranLine = checksumContent.split('\n').find(l => l.includes('quran-uthmani.json'));
+      if (quranLine) {
+        const expectedHash = quranLine.split(/\s+/)[0];
+        const actualHash = crypto.createHash('sha256')
+          .update(fs.readFileSync(quranPath))
+          .digest('hex');
+        check('Quran source checksum valid', actualHash === expectedHash,
+          `Hash mismatch: expected ${expectedHash.slice(0, 16)}..., got ${actualHash.slice(0, 16)}...`);
+      } else {
+        check('Quran hash in checksums file', false, 'quran-uthmani.json not listed in checksums.sha256');
+      }
+    }
   }
 
   db.close();
