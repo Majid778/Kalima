@@ -30,12 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Words are organized into approximately 30 frequency-ordered levels with cumulative Quran coverage percentages
   4. Arabic text renders on screen with full diacritics (tashkeel) using a validated Quranic font, with per-component RTL rendering, while UI labels remain left-to-right
   5. The Expo project builds and runs on both iOS and Android simulators
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Expo scaffolding, dependencies, Drizzle schema, and test infrastructure
 - [x] 01-02-PLAN.md — Data pipeline (build-db.js) and database generation
 - [x] 01-03-PLAN.md — ArabicText component, KFGQPC font, and rendering verification
+- [ ] 01-04-PLAN.md — Gap closure: source data checksum verification (DATA-01, DATA-05)
 
 ### Phase 2: Navigation Shell and Settings
 **Goal**: Users can navigate the app through a tab-based layout and configure Arabic display preferences
@@ -107,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation and Arabic Rendering | 0/3 | Not started | - |
+| 1. Data Foundation and Arabic Rendering | 3/4 | Gap closure | - |
 | 2. Navigation Shell and Settings | 0/1 | Not started | - |
 | 3. Learn Mode and Spaced Repetition | 0/2 | Not started | - |
 | 4. Quiz Mode, Progression, and Streaks | 0/3 | Not started | - |
