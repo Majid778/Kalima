@@ -36,7 +36,7 @@ Plans:
 - [x] 01-01-PLAN.md — Expo scaffolding, dependencies, Drizzle schema, and test infrastructure
 - [x] 01-02-PLAN.md — Data pipeline (build-db.js) and database generation
 - [x] 01-03-PLAN.md — ArabicText component, KFGQPC font, and rendering verification
-- [ ] 01-04-PLAN.md — Gap closure: source data checksum verification (DATA-01, DATA-05)
+- [x] 01-04-PLAN.md — Gap closure: source data checksum verification (DATA-01, DATA-05)
 
 ### Phase 2: Navigation Shell and Settings
 **Goal**: Users can navigate the app through a tab-based layout and configure Arabic display preferences
