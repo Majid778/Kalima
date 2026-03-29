@@ -62,8 +62,8 @@
 
 ### Arabic Text Rendering
 
-- [ ] **ARAB-01**: All Arabic text renders correctly with full diacritics (tashkeel/harakat) using a validated Unicode Quranic font
-- [ ] **ARAB-02**: Arabic text uses per-component RTL rendering (`writingDirection: 'rtl'`) — not global RTL mode
+- [x] **ARAB-01**: All Arabic text renders correctly with full diacritics (tashkeel/harakat) using a validated Unicode Quranic font
+- [x] **ARAB-02**: Arabic text uses per-component RTL rendering (`writingDirection: 'rtl'`) — not global RTL mode
 - [x] **ARAB-03**: App UI navigation and labels remain left-to-right (English)
 
 ### Onboarding
@@ -126,8 +126,8 @@
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
-| ARAB-01 | Phase 1 | Pending |
-| ARAB-02 | Phase 1 | Pending |
+| ARAB-01 | Phase 1 | Complete |
+| ARAB-02 | Phase 1 | Complete |
 | ARAB-03 | Phase 1 | Complete |
 | SETT-01 | Phase 2 | Pending |
 | SETT-02 | Phase 2 | Pending |

@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Expo scaffolding, dependencies, Drizzle schema, and test infrastructure
 - [x] 01-02-PLAN.md — Data pipeline (build-db.js) and database generation
-- [ ] 01-03-PLAN.md — ArabicText component, KFGQPC font, and rendering verification
+- [x] 01-03-PLAN.md — ArabicText component, KFGQPC font, and rendering verification
 
 ### Phase 2: Navigation Shell and Settings
 **Goal**: Users can navigate the app through a tab-based layout and configure Arabic display preferences
