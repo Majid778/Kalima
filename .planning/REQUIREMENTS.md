@@ -9,9 +9,9 @@
 
 - [x] **DATA-01**: App ships with a pre-bundled SQLite database containing all frequency-ranked Quran vocabulary words (sourced from Tanzil.net with checksum verification)
 - [x] **DATA-02**: Each word entry includes: Arabic text, transliteration, English meaning(s), root letters, part of speech, frequency rank, and occurrence count
-- [ ] **DATA-03**: Each word entry includes 1-3 linked example Quran verses (surah number, ayah number, full Arabic text, English translation) with the word's position marked
-- [ ] **DATA-04**: Words are organized into ~30 levels ordered by frequency (most common first), with each level containing 25-50 words and a cumulative Quran coverage percentage
-- [ ] **DATA-05**: Database includes a build-time pipeline (Node.js script) that processes raw Tanzil + corpus.quran.com data and validates checksums before bundling
+- [x] **DATA-03**: Each word entry includes 1-3 linked example Quran verses (surah number, ayah number, full Arabic text, English translation) with the word's position marked
+- [x] **DATA-04**: Words are organized into ~30 levels ordered by frequency (most common first), with each level containing 25-50 words and a cumulative Quran coverage percentage
+- [x] **DATA-05**: Database includes a build-time pipeline (Node.js script) that processes raw Tanzil + corpus.quran.com data and validates checksums before bundling
 
 ### Learning — Learn Mode
 
@@ -123,9 +123,9 @@
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
 | ARAB-01 | Phase 1 | Pending |
 | ARAB-02 | Phase 1 | Pending |
 | ARAB-03 | Phase 1 | Complete |
