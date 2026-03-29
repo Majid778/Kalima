@@ -11,11 +11,13 @@
 const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const RAW_DIR = path.join(__dirname, 'data', 'raw');
 const OUT_DB = path.join(__dirname, '..', 'assets', 'db', 'kalima.db');
 const GAPS_REPORT = path.join(__dirname, 'gaps-report.json');
 const LEVEL_CONFIG = require('./level-config.json');
+const CHECKSUMS_PATH = path.join(RAW_DIR, 'checksums.sha256');
 
 // ===== Transliteration mapping (Buckwalter-like to readable) =====
 const ARABIC_TO_TRANSLITERATION = {
@@ -398,9 +400,73 @@ function stripDiacritics(text) {
              .trim();
 }
 
+// ===== CHECKSUM VERIFICATION =====
+function verifyChecksums() {
+  console.log('Step 0: Verifying source data integrity...');
+
+  if (!fs.existsSync(CHECKSUMS_PATH)) {
+    console.error('ERROR: checksums.sha256 not found at', CHECKSUMS_PATH);
+    console.error('This file contains known-good SHA-256 hashes for Quran source data.');
+    process.exit(1);
+  }
+
+  const checksumLines = fs.readFileSync(CHECKSUMS_PATH, 'utf8')
+    .split('\n')
+    .filter(line => line.trim() && !line.startsWith('#'));
+
+  let allValid = true;
+  const verified = [];
+
+  for (const line of checksumLines) {
+    const match = line.match(/^([a-f0-9]{64})\s+(.+)$/);
+    if (!match) continue;
+
+    const [, expectedHash, filename] = match;
+    const filePath = path.join(RAW_DIR, filename.trim());
+
+    if (!fs.existsSync(filePath)) {
+      // Optional files (corpus, translation) may not exist — skip
+      console.log(`  SKIP: ${filename} (not present)`);
+      continue;
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const actualHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+    if (actualHash === expectedHash) {
+      console.log(`  PASS: ${filename}`);
+      verified.push(filename);
+    } else {
+      console.error(`  CHECKSUM FAIL: ${filename}`);
+      console.error(`    Expected: ${expectedHash}`);
+      console.error(`    Actual:   ${actualHash}`);
+      allValid = false;
+    }
+  }
+
+  if (!allValid) {
+    console.error('\nERROR: Source data integrity check failed.');
+    console.error('Raw data files do not match known-good checksums.');
+    console.error('Re-download source files or update checksums.sha256 if intentional.');
+    process.exit(1);
+  }
+
+  // quran-uthmani.json is required — must have been verified
+  if (!verified.includes('quran-uthmani.json')) {
+    console.error('ERROR: quran-uthmani.json was not verified (missing from checksums or not present)');
+    process.exit(1);
+  }
+
+  console.log(`  ${verified.length} file(s) verified\n`);
+  return verified;
+}
+
 // ===== Main pipeline =====
 async function main() {
   console.log('=== Kalima Data Pipeline ===\n');
+
+  // --- Step 0: Checksum verification ---
+  const verifiedFiles = verifyChecksums();
 
   // --- Check prerequisites ---
   const quranPath = path.join(RAW_DIR, 'quran-uthmani.json');
