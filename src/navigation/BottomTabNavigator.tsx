@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { JourneyScreen } from '../screens/JourneyScreen';
-import { LearnScreen } from '../screens/LearnScreen';
+import { LevelListScreen } from '../screens/learn/LevelListScreen';
 import { PracticeScreen } from '../screens/PracticeScreen';
 import { QuizScreen } from '../screens/QuizScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -41,7 +41,7 @@ export function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Journey" component={JourneyScreen} />
-      <Tab.Screen name="Learn" component={LearnScreen} />
+      <Tab.Screen name="Learn" component={LevelListScreen} />
       <Tab.Screen name="Practice" component={PracticeScreen} />
       <Tab.Screen name="Quiz" component={QuizScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
