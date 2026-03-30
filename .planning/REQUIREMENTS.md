@@ -23,12 +23,12 @@
 
 ### Learning — Practice Mode (Spaced Repetition)
 
-- [ ] **PRAC-01**: User can practice due flashcards using the SM-2 spaced repetition algorithm
-- [ ] **PRAC-02**: Each flashcard shows the Arabic word on the front; tapping reveals transliteration, English meaning, and an example verse
-- [ ] **PRAC-03**: User self-grades each card with four buttons: Again, Hard, Good, Easy — each showing the next review interval
+- [x] **PRAC-01**: User can practice due flashcards using the SM-2 spaced repetition algorithm
+- [x] **PRAC-02**: Each flashcard shows the Arabic word on the front; tapping reveals transliteration, English meaning, and an example verse
+- [x] **PRAC-03**: User self-grades each card with four buttons: Again, Hard, Good, Easy — each showing the next review interval
 - [x] **PRAC-04**: SM-2 algorithm correctly updates interval, easiness factor, and next review date after each grade
 - [x] **PRAC-05**: SM-2 implementation includes interval fuzzing (±10%) to prevent card clumping, a daily review cap (200 cards max), and an EF floor of 1.3
-- [ ] **PRAC-06**: Practice session shows count of cards due and new cards available
+- [x] **PRAC-06**: Practice session shows count of cards due and new cards available
 - [x] **PRAC-07**: User progress (SM-2 state per word) persists in local SQLite across app launches
 
 ### Learning — Quiz Mode
@@ -136,12 +136,12 @@
 | LEARN-03 | Phase 3 | Complete |
 | LEARN-04 | Phase 3 | Complete |
 | LEARN-05 | Phase 3 | Complete |
-| PRAC-01 | Phase 3 | Pending |
-| PRAC-02 | Phase 3 | Pending |
-| PRAC-03 | Phase 3 | Pending |
+| PRAC-01 | Phase 3 | Complete |
+| PRAC-02 | Phase 3 | Complete |
+| PRAC-03 | Phase 3 | Complete |
 | PRAC-04 | Phase 3 | Complete |
 | PRAC-05 | Phase 3 | Complete |
-| PRAC-06 | Phase 3 | Pending |
+| PRAC-06 | Phase 3 | Complete |
 | PRAC-07 | Phase 3 | Complete |
 | QUIZ-01 | Phase 4 | Pending |
 | QUIZ-02 | Phase 4 | Pending |

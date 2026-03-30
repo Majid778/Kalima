@@ -68,7 +68,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — SM-2 algorithm with TDD, word/practice data services, navigation restructure (GestureHandlerRootView + RootStack)
 - [x] 03-02-PLAN.md — Learn mode: level list screen and swipeable word card viewer with gesture navigation
-- [ ] 03-03-PLAN.md — Practice mode: practice home with stats, flashcard session with tap-to-reveal and SM-2 grading
+- [x] 03-03-PLAN.md — Practice mode: practice home with stats, flashcard session with tap-to-reveal and SM-2 grading
 
 ### Phase 4: Quiz Mode, Progression, and Streaks
 **Goal**: Users can test their knowledge, unlock new levels, track their growing Quran comprehension percentage, and maintain daily streaks
