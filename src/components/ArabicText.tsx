@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, StyleSheet, TextStyle, TextProps } from 'react-native';
 import { fonts, arabicFontSizes, arabicLineHeights, ArabicFontSize } from '../theme/typography';
 import { colors } from '../theme/colors';
+import { useSettingsStore } from '../stores/settingsStore';
 
 interface ArabicTextProps extends Omit<TextProps, 'style'> {
   children: string;
@@ -13,17 +14,20 @@ interface ArabicTextProps extends Omit<TextProps, 'style'> {
 export function ArabicText({
   children,
   style,
-  size = 'medium',
+  size,
   color,
   ...textProps
 }: ArabicTextProps) {
+  const globalSize = useSettingsStore((s) => s.arabicFontSize);
+  const effectiveSize = size ?? globalSize;
+
   return (
     <Text
       style={[
         styles.arabic,
         {
-          fontSize: arabicFontSizes[size],
-          lineHeight: arabicLineHeights[size],
+          fontSize: arabicFontSizes[effectiveSize],
+          lineHeight: arabicLineHeights[effectiveSize],
         },
         color ? { color } : null,
         style,

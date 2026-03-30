@@ -1,6 +1,11 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { ArabicText } from '../ArabicText';
+import { useSettingsStore } from '../../stores/settingsStore';
+
+beforeEach(() => {
+  useSettingsStore.setState({ arabicFontSize: 'medium', showTransliteration: true });
+});
 
 describe('ArabicText (ARAB-01): Font and diacritics', () => {
   test('renders with KFGQPC-Uthmanic-Script-HAFS fontFamily', () => {
@@ -34,5 +39,33 @@ describe('ArabicText (ARAB-02): RTL rendering', () => {
     const textElement = getByText('بِسْمِ');
     const flatStyle = Object.assign({}, ...textElement.props.style.filter(Boolean));
     expect(flatStyle.textAlign).toBe('right');
+  });
+});
+
+describe('ArabicText (SETT-02): Global font size from store', () => {
+  test('uses store font size when no size prop provided', () => {
+    useSettingsStore.setState({ arabicFontSize: 'large' });
+    const { getByText } = render(<ArabicText>بِسْمِ</ArabicText>);
+    const textElement = getByText('بِسْمِ');
+    const flatStyle = Object.assign({}, ...textElement.props.style.filter(Boolean));
+    expect(flatStyle.fontSize).toBe(42);
+    expect(flatStyle.lineHeight).toBe(72);
+  });
+
+  test('explicit size prop overrides store', () => {
+    useSettingsStore.setState({ arabicFontSize: 'large' });
+    const { getByText } = render(<ArabicText size="small">بِسْمِ</ArabicText>);
+    const textElement = getByText('بِسْمِ');
+    const flatStyle = Object.assign({}, ...textElement.props.style.filter(Boolean));
+    expect(flatStyle.fontSize).toBe(24);
+    expect(flatStyle.lineHeight).toBe(40);
+  });
+
+  test('defaults to medium from store initial state', () => {
+    // Store is reset to medium in beforeEach
+    const { getByText } = render(<ArabicText>بِسْمِ</ArabicText>);
+    const textElement = getByText('بِسْمِ');
+    const flatStyle = Object.assign({}, ...textElement.props.style.filter(Boolean));
+    expect(flatStyle.fontSize).toBe(32);
   });
 });
