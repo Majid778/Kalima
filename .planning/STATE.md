@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-30T08:23:05.806Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-30T13:55:15.576Z"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Users learn the most impactful Quran vocabulary first and track their growing understanding of the Quran as a percentage
-**Current focus:** Phase 02 — navigation-shell-and-settings
+**Current focus:** Phase 03 — learn-mode-and-spaced-repetition
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 03 (learn-mode-and-spaced-repetition) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: Not started
 | Phase 01 P04 | 2min | 2 tasks | 3 files |
 | Phase 02-01 P01 | 2min | 2 tasks | 12 files |
 | Phase 02 P02 | 8min | 2 tasks | 5 files |
+| Phase 03 P01 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01]: SHA-256 checksums for all raw data files verified before build; quran-uthmani.json is required, corpus/translation files optional
 - [Phase 02]: ArabicText uses prop-override-store pattern: size prop overrides store value, omitting size reads from settingsStore
 - [Phase 02]: Replaced deprecated RN SafeAreaView with react-native-safe-area-context SafeAreaView
+- [Phase 03]: SM-2 uses injectable today parameter for deterministic testing
+- [Phase 03]: Service functions take db as first parameter (not global import) for testability
+- [Phase 03]: RootStackNavigator uses placeholder components for WordCard/PracticeSession (replaced by Plans 02/03)
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:19:06.308Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-30T13:55:15.574Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
