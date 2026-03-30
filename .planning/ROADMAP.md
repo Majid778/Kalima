@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Settings store (Zustand + MMKV), tab navigator, placeholder screens, dark theme shell
-- [ ] 02-02-PLAN.md — Profile settings UI (segmented control, transliteration toggle), ArabicText store integration
+- [x] 02-02-PLAN.md — Profile settings UI (segmented control, transliteration toggle), ArabicText store integration
 
 ### Phase 3: Learn Mode and Spaced Repetition
 **Goal**: Users can learn new Quran vocabulary through word cards and retain it through spaced repetition practice
