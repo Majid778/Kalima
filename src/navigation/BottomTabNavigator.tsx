@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { JourneyScreen } from '../screens/JourneyScreen';
 import { LevelListScreen } from '../screens/learn/LevelListScreen';
-import { PracticeScreen } from '../screens/PracticeScreen';
+import { PracticeHomeScreen } from '../screens/practice/PracticeHomeScreen';
 import { QuizScreen } from '../screens/QuizScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 
@@ -42,7 +42,7 @@ export function BottomTabNavigator() {
     >
       <Tab.Screen name="Journey" component={JourneyScreen} />
       <Tab.Screen name="Learn" component={LevelListScreen} />
-      <Tab.Screen name="Practice" component={PracticeScreen} />
+      <Tab.Screen name="Practice" component={PracticeHomeScreen} />
       <Tab.Screen name="Quiz" component={QuizScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
