@@ -1,6 +1,13 @@
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { openDatabaseSync } from 'expo-sqlite';
+import { Platform } from 'react-native';
 import * as schema from './schema';
 
-const expo = openDatabaseSync('kalima.db', { enableChangeListener: true });
-export const db = drizzle(expo, { schema });
+let db: any;
+
+if (Platform.OS !== 'web') {
+  const { drizzle } = require('drizzle-orm/expo-sqlite');
+  const { openDatabaseSync } = require('expo-sqlite');
+  const expo = openDatabaseSync('kalima.db', { enableChangeListener: true });
+  db = drizzle(expo, { schema });
+}
+
+export { db };

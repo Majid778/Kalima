@@ -26,6 +26,8 @@
   </head>
 
   <body>
+    <!-- Polyfill SharedArrayBuffer for react-native-reanimated on web (dev only) -->
+    <script>if(typeof SharedArrayBuffer==='undefined'){window.SharedArrayBuffer=ArrayBuffer}</script>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
     <noscript>
       You need to enable JavaScript to run this app.
