@@ -63,11 +63,12 @@ Plans:
   3. User can practice due flashcards: front shows Arabic word, tapping reveals meaning and example verse, then user grades with Again/Hard/Good/Easy buttons showing next review intervals
   4. SM-2 algorithm correctly schedules reviews with interval fuzzing, daily review cap, and ease factor floor of 1.3
   5. All learning progress persists in local SQLite across app restarts
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — SM-2 algorithm with TDD, word/practice data services, navigation restructure (GestureHandlerRootView + RootStack)
+- [ ] 03-02-PLAN.md — Learn mode: level list screen and swipeable word card viewer with gesture navigation
+- [ ] 03-03-PLAN.md — Practice mode: practice home with stats, flashcard session with tap-to-reveal and SM-2 grading
 
 ### Phase 4: Quiz Mode, Progression, and Streaks
 **Goal**: Users can test their knowledge, unlock new levels, track their growing Quran comprehension percentage, and maintain daily streaks
@@ -111,6 +112,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Data Foundation and Arabic Rendering | 3/4 | Gap closure | - |
 | 2. Navigation Shell and Settings | 0/2 | Planned | - |
-| 3. Learn Mode and Spaced Repetition | 0/2 | Not started | - |
+| 3. Learn Mode and Spaced Repetition | 0/3 | Planned | - |
 | 4. Quiz Mode, Progression, and Streaks | 0/3 | Not started | - |
 | 5. Onboarding and Profile | 0/1 | Not started | - |
