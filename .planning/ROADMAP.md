@@ -47,10 +47,11 @@ Plans:
   2. User can toggle transliteration visibility on and off, and the preference persists across app launches
   3. User can change Arabic font size between at least 3 options (small, medium, large), and the change is immediately visible on Arabic text
   4. Dark theme with green accents is applied consistently across all screens
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Settings store (Zustand + MMKV), tab navigator, placeholder screens, dark theme shell
+- [ ] 02-02-PLAN.md — Profile settings UI (segmented control, transliteration toggle), ArabicText store integration
 
 ### Phase 3: Learn Mode and Spaced Repetition
 **Goal**: Users can learn new Quran vocabulary through word cards and retain it through spaced repetition practice
@@ -109,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation and Arabic Rendering | 3/4 | Gap closure | - |
-| 2. Navigation Shell and Settings | 0/1 | Not started | - |
+| 2. Navigation Shell and Settings | 0/2 | Planned | - |
 | 3. Learn Mode and Spaced Repetition | 0/2 | Not started | - |
 | 4. Quiz Mode, Progression, and Streaks | 0/3 | Not started | - |
 | 5. Onboarding and Profile | 0/1 | Not started | - |
