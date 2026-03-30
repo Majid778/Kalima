@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors } from './src/theme/colors';
-import { BottomTabNavigator } from './src/navigation/BottomTabNavigator';
+import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 
 const KalimaTheme = {
   ...DefaultTheme,
@@ -19,8 +20,10 @@ const KalimaTheme = {
 
 export default function App() {
   return (
-    <NavigationContainer theme={KalimaTheme}>
-      <BottomTabNavigator />
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer theme={KalimaTheme}>
+        <RootStackNavigator />
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
