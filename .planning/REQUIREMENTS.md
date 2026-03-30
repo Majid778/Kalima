@@ -57,8 +57,8 @@
 
 ### Settings & Accessibility
 
-- [ ] **SETT-01**: User can toggle transliteration visibility on/off globally
-- [ ] **SETT-02**: User can adjust Arabic font size (at least 3 sizes: small, medium, large)
+- [x] **SETT-01**: User can toggle transliteration visibility on/off globally
+- [x] **SETT-02**: User can adjust Arabic font size (at least 3 sizes: small, medium, large)
 
 ### Arabic Text Rendering
 
@@ -129,8 +129,8 @@
 | ARAB-01 | Phase 1 | Complete |
 | ARAB-02 | Phase 1 | Complete |
 | ARAB-03 | Phase 1 | Complete |
-| SETT-01 | Phase 2 | Pending |
-| SETT-02 | Phase 2 | Pending |
+| SETT-01 | Phase 2 | Complete |
+| SETT-02 | Phase 2 | Complete |
 | LEARN-01 | Phase 3 | Pending |
 | LEARN-02 | Phase 3 | Pending |
 | LEARN-03 | Phase 3 | Pending |
