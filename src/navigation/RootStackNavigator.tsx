@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BottomTabNavigator } from './BottomTabNavigator';
+import { WordCardScreen } from '../screens/learn/WordCardScreen';
 import { colors } from '../theme/colors';
 
 export type RootStackParamList = {
@@ -12,15 +13,7 @@ export type RootStackParamList = {
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
-// Placeholder screens - will be replaced by Plans 02 and 03
-function WordCardPlaceholder() {
-  return (
-    <View style={styles.placeholder}>
-      <Text style={styles.placeholderText}>Word Card</Text>
-    </View>
-  );
-}
-
+// Placeholder - will be replaced by Plan 03
 function PracticeSessionPlaceholder() {
   return (
     <View style={styles.placeholder}>
@@ -33,7 +26,7 @@ export function RootStackNavigator() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="Tabs" component={BottomTabNavigator} />
-      <RootStack.Screen name="WordCard" component={WordCardPlaceholder} />
+      <RootStack.Screen name="WordCard" component={WordCardScreen} options={{ headerShown: true }} />
       <RootStack.Screen name="PracticeSession" component={PracticeSessionPlaceholder} />
     </RootStack.Navigator>
   );
