@@ -15,11 +15,11 @@
 
 ### Learning — Learn Mode
 
-- [ ] **LEARN-01**: User can browse all words in a level via swipeable word cards
-- [ ] **LEARN-02**: Each word card displays the Arabic word prominently, transliteration (toggleable), English meaning(s), root letters, part of speech, and occurrence count
+- [x] **LEARN-01**: User can browse all words in a level via swipeable word cards
+- [x] **LEARN-02**: Each word card displays the Arabic word prominently, transliteration (toggleable), English meaning(s), root letters, part of speech, and occurrence count
 - [x] **LEARN-03**: Each word card displays at least one example Quran verse with the target word highlighted in Arabic and the English translation shown below
-- [ ] **LEARN-04**: User can navigate forward and backward through word cards within a level
-- [ ] **LEARN-05**: User can see their position within the level (e.g., "Word 3 of 40")
+- [x] **LEARN-04**: User can navigate forward and backward through word cards within a level
+- [x] **LEARN-05**: User can see their position within the level (e.g., "Word 3 of 40")
 
 ### Learning — Practice Mode (Spaced Repetition)
 
@@ -131,11 +131,11 @@
 | ARAB-03 | Phase 1 | Complete |
 | SETT-01 | Phase 2 | Complete |
 | SETT-02 | Phase 2 | Complete |
-| LEARN-01 | Phase 3 | Pending |
-| LEARN-02 | Phase 3 | Pending |
+| LEARN-01 | Phase 3 | Complete |
+| LEARN-02 | Phase 3 | Complete |
 | LEARN-03 | Phase 3 | Complete |
-| LEARN-04 | Phase 3 | Pending |
-| LEARN-05 | Phase 3 | Pending |
+| LEARN-04 | Phase 3 | Complete |
+| LEARN-05 | Phase 3 | Complete |
 | PRAC-01 | Phase 3 | Pending |
 | PRAC-02 | Phase 3 | Pending |
 | PRAC-03 | Phase 3 | Pending |
