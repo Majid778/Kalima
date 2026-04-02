@@ -1,6 +1,8 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SQLiteProvider } from 'expo-sqlite';
 import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 
@@ -18,12 +20,32 @@ const KalimaTheme = {
   },
 };
 
+function AppContent() {
+  return (
+    <NavigationContainer theme={KalimaTheme}>
+      <RootStackNavigator />
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
+  if (Platform.OS === 'web') {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AppContent />
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer theme={KalimaTheme}>
-        <RootStackNavigator />
-      </NavigationContainer>
+      <SQLiteProvider
+        databaseName="kalima.db"
+        assetSource={{ assetId: require('./assets/db/kalima.db') }}
+        options={{ enableChangeListener: true }}
+      >
+        <AppContent />
+      </SQLiteProvider>
     </GestureHandlerRootView>
   );
 }
