@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Navigation Shell and Settings** - Working tab navigation with placeholder screens, dark theme, and user-configurable Arabic font size and transliteration toggle
 - [ ] **Phase 3: Learn Mode and Spaced Repetition** - Swipeable word cards for learning new vocabulary and SM-2 flashcard practice for retention
 - [x] **Phase 4: Quiz Mode, Progression, and Streaks** - Level-gated quizzes, the "X% of Quran understood" hero metric, level map, daily streaks, and Today's Verse
-- [ ] **Phase 5: Onboarding and Profile** - First-launch onboarding with Arabic level assessment, profile screen with stats and streak calendar
+- [x] **Phase 5: Onboarding and Profile** - First-launch onboarding with Arabic level assessment, profile screen with stats and streak calendar
 
 ## Phase Details
 
@@ -98,10 +98,11 @@ Plans:
   2. Onboarding includes an Arabic level self-assessment that adjusts initial pacing (complete beginner / know alphabet / can read)
   3. Profile screen shows total words mastered, longest streak, and level completion history
   4. Profile screen displays a streak calendar (heatmap) of learning activity
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [x] 05-01-PLAN.md — onboarding store + 3-step first-launch screen (concept + Arabic level assessment) + RootStackNavigator gate
+- [x] 05-02-PLAN.md — profile stats (words mastered, longest streak, level history) + 13-week streak activity heatmap
 
 ## Progress
 
@@ -114,4 +115,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Navigation Shell and Settings | 0/2 | Planned | - |
 | 3. Learn Mode and Spaced Repetition | 0/3 | Planned | - |
 | 4. Quiz Mode, Progression, and Streaks | 3/3 | Complete | 2026-06-12 |
-| 5. Onboarding and Profile | 0/1 | Not started | - |
+| 5. Onboarding and Profile | 2/2 | Complete | 2026-06-12 |
