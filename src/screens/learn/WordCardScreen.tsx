@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { getWordsForLevel, WordWithVerses } from '../../services/wordService';
+import { introduceWords } from '../../services/practiceService';
 import { getLocalToday } from '../../services/sm2';
 import { db } from '../../data/database';
 import { WordCard } from '../../components/WordCard';
@@ -42,6 +43,10 @@ export function WordCardScreen() {
         if (mounted) {
           setWords(data);
         }
+        // Exploring a level in Learn introduces its words into the SRS queue
+        // (status 'new', due today) so they become practiceable. Existing
+        // progress is preserved (onConflictDoNothing).
+        await introduceWords(db, data.map((w) => w.id), getLocalToday());
       } finally {
         if (mounted) {
           setLoading(false);

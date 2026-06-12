@@ -108,6 +108,38 @@ export async function gradeCard(
 }
 
 /**
+ * Introduce words into the spaced-repetition queue.
+ *
+ * Browsing a level in Learn mode seeds its words here as `new` and due today,
+ * so they appear in Practice. Without this, nothing ever enters word_progress
+ * (gradeCard only updates already-due cards), so Practice stays empty and
+ * "% understood" can never move. Resolves the open question from Phase 3
+ * RESEARCH ("how do new words enter the practice queue?"): they enter when
+ * first explored in Learn. Existing progress is never overwritten.
+ */
+export async function introduceWords(
+  db: DB,
+  wordIds: number[],
+  today: string,
+): Promise<void> {
+  if (wordIds.length === 0) return;
+
+  await db.insert(wordProgress)
+    .values(
+      wordIds.map((wordId) => ({
+        wordId,
+        easeFactor: 2.5,
+        interval: 0,
+        repetitions: 0,
+        dueDate: today,
+        lastReviewed: null,
+        status: 'new',
+      })),
+    )
+    .onConflictDoNothing({ target: wordProgress.wordId });
+}
+
+/**
  * Get practice statistics: counts by status and total due.
  */
 export async function getPracticeStats(db: DB, today: string): Promise<{
