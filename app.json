@@ -40,13 +40,33 @@
           }
         }
       ],
-      ["expo-font", { "fonts": ["./assets/fonts/KFGQPC-Uthmanic-Script-HAFS.otf"] }],
-      ["expo-asset", { "assets": ["./assets/db/kalima.db"] }],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/KFGQPC-Uthmanic-Script-HAFS.otf"
+          ]
+        }
+      ],
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/db/kalima.db"
+          ]
+        }
+      ],
       "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7733db56-de90-4038-a769-4a83e62d11d0"
+      }
+    },
+    "owner": "majid778"
   }
 }
