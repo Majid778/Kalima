@@ -3,11 +3,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { WordCardScreen } from '../screens/learn/WordCardScreen';
 import { PracticeSessionScreen } from '../screens/practice/PracticeSessionScreen';
+import { QuizSessionScreen } from '../screens/quiz/QuizSessionScreen';
+import { QuizResultScreen } from '../screens/quiz/QuizResultScreen';
 
 export type RootStackParamList = {
   Tabs: undefined;
   WordCard: { levelId: number; levelName: string };
   PracticeSession: undefined;
+  QuizSession: { levelId: number; levelName: string };
+  QuizResult: { levelId: number; levelName: string; score: number; total: number };
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -21,6 +25,16 @@ export function RootStackNavigator() {
         name="PracticeSession"
         component={PracticeSessionScreen}
         options={{ headerShown: true }}
+      />
+      <RootStack.Screen
+        name="QuizSession"
+        component={QuizSessionScreen}
+        options={{ headerShown: true }}
+      />
+      <RootStack.Screen
+        name="QuizResult"
+        component={QuizResultScreen}
+        options={{ headerShown: false }}
       />
     </RootStack.Navigator>
   );
