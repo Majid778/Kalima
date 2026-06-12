@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,8 +11,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { getWordsForLevel, WordWithVerses } from '../../services/wordService';
+import { getLocalToday } from '../../services/sm2';
 import { db } from '../../data/database';
 import { WordCard } from '../../components/WordCard';
+import { useStreakStore } from '../../stores/streakStore';
 import { colors } from '../../theme/colors';
 
 const SWIPE_THRESHOLD = 50;
@@ -28,6 +30,7 @@ export function WordCardScreen() {
   const [words, setWords] = useState<WordWithVerses[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const completionActivityRecordedRef = useRef(false);
 
   const translateX = useSharedValue(0);
 
@@ -69,7 +72,20 @@ export function WordCardScreen() {
   }, [navigation, levelName, currentIndex, words.length]);
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((i) => Math.min(i + 1, words.length - 1));
+    setCurrentIndex((i) => {
+      const nextIndex = Math.min(i + 1, words.length - 1);
+
+      if (
+        nextIndex === words.length - 1 &&
+        i !== nextIndex &&
+        !completionActivityRecordedRef.current
+      ) {
+        completionActivityRecordedRef.current = true;
+        useStreakStore.getState().recordActivity(getLocalToday());
+      }
+
+      return nextIndex;
+    });
   }, [words.length]);
 
   const goToPrevious = useCallback(() => {

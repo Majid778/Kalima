@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,44 +7,36 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
-import { getLevels } from '../../services/wordService';
+import { getLevelProgressList, type LevelProgressView } from '../../services/progressService';
 import { db } from '../../data/database';
 import { colors } from '../../theme/colors';
-
-type Level = {
-  id: number;
-  name: string;
-  wordCount: number;
-  cumulativeCoverage: number;
-};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function LevelListScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [levels, setLevels] = useState<Level[]>([]);
+  const [levels, setLevels] = useState<LevelProgressView[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        const data = await getLevels(db);
-        if (mounted) {
-          setLevels(data as Level[]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
+  const loadLevels = useCallback(async () => {
+    try {
+      const data = await getLevelProgressList(db);
+      setLevels(data);
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { mounted = false; };
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      loadLevels();
+    }, [loadLevels]),
+  );
 
   if (loading) {
     return (
@@ -54,12 +46,15 @@ export function LevelListScreen() {
     );
   }
 
-  const renderItem = ({ item }: { item: Level }) => {
+  const renderItem = ({ item }: { item: LevelProgressView }) => {
     const coverageText = (item.cumulativeCoverage * 100).toFixed(1) + '%';
+    const bestScore = item.bestQuizScore === null
+      ? null
+      : `Best ${Math.round(item.bestQuizScore * 100)}%`;
 
     return (
       <TouchableOpacity
-        style={styles.row}
+        style={[styles.row, !item.unlocked && styles.rowLocked]}
         activeOpacity={0.7}
         onPress={() =>
           navigation.navigate('WordCard', {
@@ -75,7 +70,17 @@ export function LevelListScreen() {
           <Text style={styles.levelName}>{item.name}</Text>
           <Text style={styles.wordCount}>{item.wordCount} words</Text>
         </View>
-        <Text style={styles.coverage}>{coverageText}</Text>
+        <View style={styles.meta}>
+          <Text style={styles.coverage}>{coverageText}</Text>
+          {item.completed ? (
+            <View style={styles.status}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+              {bestScore && <Text style={styles.bestScore}>{bestScore}</Text>}
+            </View>
+          ) : !item.unlocked ? (
+            <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
+          ) : null}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -115,6 +120,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 64,
   },
+  rowLocked: {
+    opacity: 0.6,
+  },
   levelNumber: {
     width: 36,
     height: 36,
@@ -142,11 +150,24 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
   },
+  meta: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+    gap: 4,
+  },
   coverage: {
     color: colors.primary,
     fontSize: 15,
     fontWeight: '600',
-    marginLeft: 12,
+  },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bestScore: {
+    color: colors.textSecondary,
+    fontSize: 12,
   },
   separator: {
     height: 1,

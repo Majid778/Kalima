@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { getDueCards, gradeCard, DueCard } from '../../services/practiceService'
 import { previewGrades, getLocalToday, SM2State, Grade } from '../../services/sm2';
 import { GradeButtons } from '../../components/GradeButtons';
 import { WordCard } from '../../components/WordCard';
+import { useStreakStore } from '../../stores/streakStore';
 import { colors } from '../../theme/colors';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -21,6 +22,7 @@ export function PracticeSessionScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
   const [today] = useState(() => getLocalToday());
+  const completionActivityRecordedRef = useRef(false);
 
   useEffect(() => {
     loadCards();
@@ -70,6 +72,10 @@ export function PracticeSessionScreen() {
       if (currentIndex < cards.length - 1) {
         setCurrentIndex((i) => i + 1);
       } else {
+        if (!completionActivityRecordedRef.current) {
+          completionActivityRecordedRef.current = true;
+          useStreakStore.getState().recordActivity(getLocalToday());
+        }
         setIsComplete(true);
       }
     },

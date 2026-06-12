@@ -22,6 +22,7 @@ import {
 } from '../../services/quizService';
 import { getLocalToday } from '../../services/sm2';
 import { ArabicText } from '../../components/ArabicText';
+import { useStreakStore } from '../../stores/streakStore';
 import { colors } from '../../theme/colors';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -125,6 +126,7 @@ export function QuizSessionScreen() {
   const finishQuiz = async (finalAnswers: (string | Record<number, string>)[]) => {
     const gradeResult = gradeQuiz(questions, finalAnswers);
     await recordQuizResult(db, levelId, gradeResult.percent, today);
+    useStreakStore.getState().recordActivity(getLocalToday());
     
     setIsComplete(true);
     navigation.replace('QuizResult', {
