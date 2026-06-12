@@ -12,6 +12,44 @@ interface StreakState {
   markMilestoneCelebrated: (m: number) => void;
 }
 
+export interface ActivityCell {
+  date: string;
+  count: number;
+  intensity: 0 | 1 | 2 | 3;
+}
+
+export function buildActivityGrid(
+  activityDates: Record<string, number>,
+  today: string,
+  weeks = 13,
+): ActivityCell[][] {
+  const totalDays = weeks * 7;
+  const start = new Date(`${today}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - totalDays + 1);
+
+  const cells: ActivityCell[] = [];
+  for (let i = 0; i < totalDays; i += 1) {
+    const cursor = new Date(start);
+    cursor.setUTCDate(start.getUTCDate() + i);
+    const date = [
+      cursor.getUTCFullYear(),
+      pad2(cursor.getUTCMonth() + 1),
+      pad2(cursor.getUTCDate()),
+    ].join('-');
+    const count = activityDates[date] ?? 0;
+    const intensity: ActivityCell['intensity'] = count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3;
+
+    cells.push({ date, count, intensity });
+  }
+
+  const grid: ActivityCell[][] = [];
+  for (let week = 0; week < weeks; week += 1) {
+    grid.push(cells.slice(week * 7, week * 7 + 7));
+  }
+
+  return grid;
+}
+
 export function computeStreak(activityDates: Record<string, number>, today: string): number {
   if (Object.keys(activityDates).length === 0) return 0;
 

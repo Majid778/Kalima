@@ -3,6 +3,19 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { ProfileScreen } from '../ProfileScreen';
 import { useSettingsStore } from '../../stores/settingsStore';
 
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: jest.fn(),
+}));
+
+jest.mock('../../data/database', () => ({
+  db: {},
+}));
+
+jest.mock('../../services/progressService', () => ({
+  getLevelProgressList: jest.fn(),
+  getWordsMasteredCount: jest.fn(),
+}));
+
 beforeEach(() => {
   useSettingsStore.setState({ arabicFontSize: 'medium', showTransliteration: true });
 });

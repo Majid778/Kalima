@@ -1,4 +1,4 @@
-import { computeLongest, computeStreak } from '../streakStore';
+import { buildActivityGrid, computeLongest, computeStreak } from '../streakStore';
 
 describe('computeStreak', () => {
   it('returns 0 for empty activity', () => {
@@ -55,5 +55,44 @@ describe('computeLongest', () => {
       '2025-01-08': 1,
       '2025-01-09': 1,
     })).toBe(3);
+  });
+});
+
+describe('buildActivityGrid', () => {
+  it('returns week columns with 7 cells each', () => {
+    const grid = buildActivityGrid({}, '2025-01-14', 2);
+
+    expect(grid).toHaveLength(2);
+    expect(grid[0]).toHaveLength(7);
+    expect(grid[1]).toHaveLength(7);
+    expect(grid.flat()).toHaveLength(14);
+  });
+
+  it('ends on today', () => {
+    const grid = buildActivityGrid({}, '2025-01-14', 2);
+
+    expect(grid[1][6].date).toBe('2025-01-14');
+  });
+
+  it('returns chronological dates that advance by one day', () => {
+    const cells = buildActivityGrid({}, '2025-01-14', 2).flat();
+
+    for (let i = 1; i < cells.length; i += 1) {
+      const previous = new Date(`${cells[i - 1].date}T00:00:00Z`);
+      const current = new Date(`${cells[i].date}T00:00:00Z`);
+
+      expect(current.getTime() - previous.getTime()).toBe(86400000);
+    }
+  });
+
+  it('buckets intensity by activity count', () => {
+    const grid = buildActivityGrid({
+      '2025-01-11': 1,
+      '2025-01-12': 2,
+      '2025-01-13': 3,
+      '2025-01-14': 4,
+    }, '2025-01-14', 1);
+
+    expect(grid[0].map(cell => cell.intensity)).toEqual([0, 0, 0, 1, 2, 3, 3]);
   });
 });

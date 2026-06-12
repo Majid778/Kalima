@@ -68,6 +68,16 @@ export async function getWordsLearnedCount(db: DB): Promise<number> {
   return Number(result[0]?.count ?? 0);
 }
 
+export async function getWordsMasteredCount(db: DB): Promise<number> {
+  const result = await db.select({
+    count: sql<number>`count(*)`,
+  })
+    .from(wordProgress)
+    .where(eq(wordProgress.status, 'review'));
+
+  return Number(result[0]?.count ?? 0);
+}
+
 export async function getLevelsCompletedCount(db: DB): Promise<number> {
   const result = await db.select({
     count: sql<number>`count(*)`,
