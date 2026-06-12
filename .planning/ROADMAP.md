@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Data Foundation and Arabic Rendering** - Pre-built SQLite database with frequency-ranked Quran vocabulary, Arabic text component with correct RTL/diacritics rendering, and Expo project scaffolding
 - [ ] **Phase 2: Navigation Shell and Settings** - Working tab navigation with placeholder screens, dark theme, and user-configurable Arabic font size and transliteration toggle
 - [ ] **Phase 3: Learn Mode and Spaced Repetition** - Swipeable word cards for learning new vocabulary and SM-2 flashcard practice for retention
-- [ ] **Phase 4: Quiz Mode, Progression, and Streaks** - Level-gated quizzes, the "X% of Quran understood" hero metric, level map, daily streaks, and Today's Verse
+- [x] **Phase 4: Quiz Mode, Progression, and Streaks** - Level-gated quizzes, the "X% of Quran understood" hero metric, level map, daily streaks, and Today's Verse
 - [ ] **Phase 5: Onboarding and Profile** - First-launch onboarding with Arabic level assessment, profile screen with stats and streak calendar
 
 ## Phase Details
@@ -82,12 +82,12 @@ Plans:
   5. Today's Verse appears on the home screen showing a daily Quran verse with a note like "You know X/Y words in this verse"
   6. Daily streak increments when user completes any learning activity and resets if a day is missed
   7. User sees milestone celebrations at 25%, 50%, 75%, and 100% Quran comprehension
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [x] 04-01-PLAN.md — progress service + streak store foundation (occurrence-weighted %, unlock rule, Today's Verse, milestone helper)
+- [x] 04-02-PLAN.md — quiz mode: deterministic generation, grading, 80% pass/unlock, quiz home/session/result screens
+- [x] 04-03-PLAN.md — journey home (% + stats + due CTA + Today's Verse + milestone modal), level lock/completion display, activity wiring
 
 ### Phase 5: Onboarding and Profile
 **Goal**: New users are welcomed with an introduction to the app and placed at the right starting level, and returning users can view their complete learning history
@@ -113,5 +113,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Data Foundation and Arabic Rendering | 3/4 | Gap closure | - |
 | 2. Navigation Shell and Settings | 0/2 | Planned | - |
 | 3. Learn Mode and Spaced Repetition | 0/3 | Planned | - |
-| 4. Quiz Mode, Progression, and Streaks | 0/3 | Not started | - |
+| 4. Quiz Mode, Progression, and Streaks | 3/3 | Complete | 2026-06-12 |
 | 5. Onboarding and Profile | 0/1 | Not started | - |
