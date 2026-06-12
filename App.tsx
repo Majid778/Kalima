@@ -1,10 +1,11 @@
-import React from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SQLiteProvider } from 'expo-sqlite';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
+import { setDb } from './src/data/database';
 
 const KalimaTheme = {
   ...DefaultTheme,
@@ -28,6 +29,29 @@ function AppContent() {
   );
 }
 
+// Initializes the shared `db` singleton from the SQLiteProvider's connection
+// (which has already copied the bundled asset) and holds rendering until it's
+// ready, so no screen mounts against an uninitialized/empty database.
+function DbGate({ children }: { children: React.ReactNode }) {
+  const sqlite = useSQLiteContext();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setDb(sqlite);
+    setReady(true);
+  }, [sqlite]);
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   if (Platform.OS === 'web') {
     return (
@@ -44,7 +68,9 @@ export default function App() {
         assetSource={{ assetId: require('./assets/db/kalima.db') }}
         options={{ enableChangeListener: true }}
       >
-        <AppContent />
+        <DbGate>
+          <AppContent />
+        </DbGate>
       </SQLiteProvider>
     </GestureHandlerRootView>
   );
