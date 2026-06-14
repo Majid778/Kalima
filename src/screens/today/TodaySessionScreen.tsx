@@ -1,7 +1,7 @@
 // src/screens/today/TodaySessionScreen.tsx
 // Main practice session for Today: card reveal, grading, mistake recovery
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -37,7 +37,8 @@ import { WordCard } from '../../components/WordCard';
 import { GradeButtons } from '../../components/GradeButtons';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { swipeDirectionToGrade } from '../../components/today/swipeGrade';
-import { colors } from '../../theme/colors';
+import type { ThemeTokens } from '../../theme/theme';
+import { useTheme } from '../../theme/useTheme';
 import {
   recordEvent,
   startSession,
@@ -61,11 +62,11 @@ const SPRING_CONFIG = {
   stiffness: 210,
   mass: 0.85,
 };
-const HINTS: { grade: Grade; label: string; color: string }[] = [
-  { grade: 'again', label: 'Again', color: colors.error },
-  { grade: 'hard', label: 'Hard', color: colors.warning },
-  { grade: 'good', label: 'Good', color: colors.primary },
-  { grade: 'easy', label: 'Easy', color: '#3b82f6' },
+const getHints = (theme: ThemeTokens): { grade: Grade; label: string; color: string }[] => [
+  { grade: 'again', label: 'Again', color: theme.feedback.error },
+  { grade: 'hard', label: 'Hard', color: theme.feedback.warning },
+  { grade: 'good', label: 'Good', color: theme.action.action },
+  { grade: 'easy', label: 'Easy', color: theme.learningState.due },
 ];
 
 interface SessionState {
@@ -78,6 +79,8 @@ interface SessionState {
 }
 
 function LoadingSkeleton() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const reduceMotion = useReducedMotion();
   const shimmer = useSharedValue(0);
 
@@ -113,6 +116,9 @@ function LoadingSkeleton() {
 
 export function TodaySessionScreen() {
   const navigation = useNavigation<NavProp>();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const hints = useMemo(() => getHints(theme), [theme]);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
   // Known-word map for in-āyah status coloring (P2); optional — WordCard degrades
   // to target-only coloring when absent.
@@ -478,7 +484,7 @@ export function TodaySessionScreen() {
   if (!item) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: colors.text, fontSize: 16, marginBottom: 16, textAlign: 'center' }}>
+        <Text style={styles.completionText}>
           You're all done for now.
         </Text>
         <Pressable
@@ -557,7 +563,7 @@ export function TodaySessionScreen() {
           <Animated.View style={[styles.activeCard, swipeCardStyle]}>
             {sessionState.revealed && (
               <View pointerEvents="none" style={styles.hintLayer}>
-                {HINTS.map(({ grade, label, color }) => (
+                {hints.map(({ grade, label, color }) => (
                   <Animated.View
                     key={grade}
                     style={[
@@ -642,10 +648,10 @@ export function TodaySessionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.surfaces.background,
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
@@ -658,7 +664,7 @@ const styles = StyleSheet.create({
   },
   progress: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontWeight: '500',
   },
   cardContainer: {
@@ -667,29 +673,35 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   revealButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.action.action,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 16,
   },
   revealButtonText: {
-    color: colors.background,
+    color: theme.text.onAction,
     fontSize: 16,
     fontWeight: '600',
   },
   errorText: {
-    color: colors.error,
+    color: theme.feedback.error,
     fontSize: 16,
+    textAlign: 'center',
+  },
+  completionText: {
+    color: theme.text.textPrimary,
+    fontSize: 16,
+    marginBottom: 16,
     textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.surfaces.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -700,13 +712,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
+    color: theme.text.textPrimary,
     marginBottom: 20,
   },
   modalLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 12,
@@ -717,32 +729,32 @@ const styles = StyleSheet.create({
   },
   reviewText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontWeight: '500',
     marginBottom: 12,
   },
   arabicText: {
     fontSize: 20,
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontWeight: '600',
     marginBottom: 8,
     textAlign: 'right',
   },
   translationText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     lineHeight: 20,
     marginBottom: 12,
   },
   retryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.action.action,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 8,
   },
   retryButtonText: {
-    color: colors.background,
+    color: theme.text.onAction,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -761,18 +773,18 @@ const styles = StyleSheet.create({
   skeletonLineShort: {
     height: 14,
     borderRadius: 6,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
     width: 50,
   },
   skeletonBadge: {
     width: 48,
     height: 24,
     borderRadius: 6,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
   },
   skeletonCard: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderRadius: 12,
     marginBottom: 24,
     overflow: 'hidden',
@@ -783,23 +795,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: theme.surfaces.surfaceElevated,
   },
   skeletonArabicLine: {
     height: 48,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
     marginVertical: 16,
     borderRadius: 6,
   },
   skeletonLine: {
     height: 16,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
     marginVertical: 8,
     borderRadius: 6,
   },
   skeletonLineNarrow: {
     height: 14,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
     width: '70%',
     marginVertical: 8,
     borderRadius: 6,
@@ -808,7 +820,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderRadius: 12,
   },
   activeCard: {
@@ -843,7 +855,7 @@ const styles = StyleSheet.create({
   },
   swipeHintInterval: {
     fontSize: 10,
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     marginTop: 2,
   },
   swipeHintAgain: {

@@ -1,7 +1,7 @@
 // src/screens/today/TodayResultScreen.tsx
 // Recap after session: words learned, streak, milestones
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import { db } from '../../data/database';
 import { getWordsLearnedCount, getQuranPercent } from '../../services/progressService';
 import { getLocalToday } from '../../services/sm2';
 import { useStreakStore } from '../../stores/streakStore';
-import { colors } from '../../theme/colors';
+import type { ThemeTokens } from '../../theme/theme';
+import { useTheme } from '../../theme/useTheme';
 import { recordEvent, recordActivityForToday } from '../../services/instrumentationRuntime';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -29,6 +30,8 @@ interface ResultStats {
 
 export function TodayResultScreen() {
   const navigation = useNavigation<NavProp>();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const recordActivity = useStreakStore(s => s.recordActivity);
   const { currentStreak: streak, activityDates } = useStreakStore();
 
@@ -76,7 +79,7 @@ export function TodayResultScreen() {
   if (isLoading || !stats) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.action.action} />
       </View>
     );
   }
@@ -92,17 +95,17 @@ export function TodayResultScreen() {
           <StatCard
             label="Words Learned"
             value={stats.wordsLearned.toString()}
-            color={colors.primary}
+            color={theme.action.action}
           />
           <StatCard
             label="Qur'an Mastered"
             value={`${Math.round(stats.quranPercent * 100)}%`}
-            color="#3b82f6"
+            color={theme.learningState.due}
           />
           <StatCard
             label="Current Streak"
             value={stats.currentStreak.toString()}
-            color={colors.warning}
+            color={theme.feedback.warning}
           />
         </View>
 
@@ -119,6 +122,9 @@ export function TodayResultScreen() {
 }
 
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
     <View style={[styles.card, { borderTopColor: color, borderTopWidth: 3 }]}>
       <Text style={styles.cardLabel}>{label}</Text>
@@ -127,10 +133,10 @@ function StatCard({ label, value, color }: { label: string; value: string; color
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.surfaces.background,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -142,7 +148,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.text,
+    color: theme.text.textPrimary,
     marginBottom: 40,
   },
   statsContainer: {
@@ -151,7 +157,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -159,7 +165,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     marginBottom: 6,
   },
   cardValue: {
@@ -168,13 +174,13 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: theme.action.action,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
   },
   doneButtonText: {
-    color: colors.background,
+    color: theme.text.onAction,
     fontSize: 16,
     fontWeight: 'bold',
   },

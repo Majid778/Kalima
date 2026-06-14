@@ -1,7 +1,7 @@
 // src/screens/today/TodayHomeScreen.tsx
 // Today session home: shows session composition (new/review/check) and start button
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +11,8 @@ import { getDueCards } from '../../services/practiceService';
 import { getWordsForLevel } from '../../services/wordService';
 import { getLocalToday } from '../../services/sm2';
 import { buildTodaySession, SessionSequence } from '../../services/sessionService';
-import { colors } from '../../theme/colors';
+import type { ThemeTokens } from '../../theme/theme';
+import { useTheme } from '../../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +27,8 @@ const SESSION_CONFIG = {
 
 export function TodayHomeScreen() {
   const navigation = useNavigation<NavProp>();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [session, setSession] = useState<SessionSequence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -68,7 +71,7 @@ export function TodayHomeScreen() {
   if (isLoading || !session) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.action.action} />
       </View>
     );
   }
@@ -89,21 +92,21 @@ export function TodayHomeScreen() {
               <BreakdownPill
                 label="New"
                 count={session.newCount}
-                color={colors.primary}
+                color={theme.action.action}
               />
             )}
             {session.reviewCount > 0 && (
               <BreakdownPill
                 label="Review"
                 count={session.reviewCount}
-                color="#3b82f6"
+                color={theme.learningState.due}
               />
             )}
             {session.checkCount > 0 && (
               <BreakdownPill
                 label="Check"
                 count={session.checkCount}
-                color={colors.warning}
+                color={theme.feedback.warning}
               />
             )}
           </View>
@@ -139,6 +142,9 @@ function BreakdownPill({
   count: number;
   color: string;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
     <View style={[styles.pill, { borderColor: color }]}>
       <View style={[styles.dot, { backgroundColor: color }]} />
@@ -149,10 +155,10 @@ function BreakdownPill({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.surfaces.background,
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 40,
@@ -165,12 +171,12 @@ const styles = StyleSheet.create({
   heroCount: {
     fontSize: 56,
     fontWeight: '800',
-    color: colors.primary,
+    color: theme.action.action,
     marginBottom: 4,
   },
   heroLabel: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     marginBottom: 32,
   },
   breakdownContainer: {
@@ -183,7 +189,7 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 12,
@@ -196,19 +202,19 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   pillText: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 13,
     fontWeight: '500',
   },
   startButton: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: theme.action.action,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
   },
   startButtonText: {
-    color: colors.background,
+    color: theme.text.onAction,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -217,13 +223,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   emptyTitle: {
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 14,
   },
 });
