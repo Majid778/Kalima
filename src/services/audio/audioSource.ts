@@ -26,6 +26,17 @@ export function ayahAudioUrl(
   return `https://everyayah.com/data/${reciter.folder}/${padQuranRef(surahNumber)}${padQuranRef(ayahNumber)}.mp3`;
 }
 
+// Word-by-word audio from quran.com's public CDN.
+// Each segment (surah, ayah, word) is zero-padded to 3 digits.
+// Production should confirm availability and licensing of the quran.com WBW audio CDN before release.
+export function wbwAudioUrl(
+  surahNumber: number,
+  ayahNumber: number,
+  wordNumber: number,
+): string {
+  return `https://audio.qurancdn.com/wbw/${padQuranRef(surahNumber)}_${padQuranRef(ayahNumber)}_${padQuranRef(wordNumber)}.mp3`;
+}
+
 export function getReciterById(id: string): Reciter {
   return RECITERS.find((reciter) => reciter.id === id) ?? RECITERS[0];
 }

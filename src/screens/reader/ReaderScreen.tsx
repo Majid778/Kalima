@@ -204,6 +204,8 @@ function ReaderRow({
               targetPosition={primaryVerse.wordPosition}
               knownMap={knownMap}
               size="medium"
+              surahNumber={primaryVerse.surahNumber}
+              ayahNumber={primaryVerse.ayahNumber}
             />
           ) : (
             <Text style={styles.noVerseText}>No example verse is available for this word yet.</Text>
@@ -229,6 +231,8 @@ function ReaderRow({
                     targetPosition={verse.wordPosition}
                     knownMap={knownMap}
                     size="small"
+                    surahNumber={verse.surahNumber}
+                    ayahNumber={verse.ayahNumber}
                   />
                   <Text style={styles.translation}>{verse.translation}</Text>
                 </View>

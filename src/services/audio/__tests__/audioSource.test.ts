@@ -3,6 +3,7 @@ import {
   DEFAULT_RECITER_ID,
   getReciterById,
   RECITERS,
+  wbwAudioUrl,
 } from '../audioSource';
 
 describe('audioSource', () => {
@@ -27,5 +28,14 @@ describe('audioSource', () => {
 
   it('falls back to the default reciter for unknown ids', () => {
     expect(getReciterById('missing-reciter')).toEqual(getReciterById(DEFAULT_RECITER_ID));
+  });
+
+  it('builds zero-padded quran.com WBW URLs', () => {
+    expect(wbwAudioUrl(1, 1, 1)).toBe(
+      'https://audio.qurancdn.com/wbw/001_001_001.mp3',
+    );
+    expect(wbwAudioUrl(2, 255, 10)).toBe(
+      'https://audio.qurancdn.com/wbw/002_255_010.mp3',
+    );
   });
 });

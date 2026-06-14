@@ -48,6 +48,8 @@ function ExampleVerseItem({
         knownMap={knownMap}
         cloze={cloze}
         size="small"
+        surahNumber={verse.surahNumber}
+        ayahNumber={verse.ayahNumber}
       />
 
       <View style={styles.verseRefRow}>
