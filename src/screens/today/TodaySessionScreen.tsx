@@ -26,12 +26,13 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { db } from '../../data/database';
-import { getDueCards, gradeCard, getProgressWordIds } from '../../services/practiceService';
+import { getDueCards, gradeCard, getProgressWordIds, getLearnedWordStatuses } from '../../services/practiceService';
 import { getWordsForLevel } from '../../services/wordService';
 import { getLocalToday } from '../../services/sm2';
 import { buildTodaySession, SessionSequence, SessionItem, reinsertAtEnd } from '../../services/sessionService';
 import { previewGrades, Grade, type SM2State } from '../../services/sm2';
-import { getWordStrength } from '../../services/wordStrengthService';
+import { getWordStrength, type WordStrength } from '../../services/wordStrengthService';
+import { buildKnownWordMap } from '../../services/arabicNormalize';
 import { WordCard } from '../../components/WordCard';
 import { GradeButtons } from '../../components/GradeButtons';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
@@ -113,6 +114,9 @@ function LoadingSkeleton() {
 export function TodaySessionScreen() {
   const navigation = useNavigation<NavProp>();
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
+  // Known-word map for in-āyah status coloring (P2); optional — WordCard degrades
+  // to target-only coloring when absent.
+  const [knownMap, setKnownMap] = useState<Map<string, WordStrength>>();
   // Refs are read synchronously at callback/cleanup time, immune to stale closures:
   // completedRef gates the abandon-on-blur cleanup; gradingRef blocks re-entrant taps.
   const completedRef = useRef(false);
@@ -131,10 +135,11 @@ export function TodaySessionScreen() {
     const initSession = async () => {
       try {
         const today = getLocalToday();
-        const [dueCards, levelWords, progressIds] = await Promise.all([
+        const [dueCards, levelWords, progressIds, learnedStatuses] = await Promise.all([
           getDueCards(db, today, 200),
           getWordsForLevel(db, 1),
           getProgressWordIds(db),
+          getLearnedWordStatuses(db),
         ]);
 
         // "New" = level words not yet in the SR queue, so a word can never be
@@ -168,6 +173,7 @@ export function TodaySessionScreen() {
           isLoading: false,
           completed: false,
         });
+        setKnownMap(buildKnownWordMap(learnedStatuses));
 
         // Open an instrumentation session (populates sessionSummaries for
         // completion-rate + drop-off) and record the start event (funnel + milestone).
@@ -573,7 +579,7 @@ export function TodaySessionScreen() {
               style={[styles.cardFace, frontFaceStyle]}
             >
               {/* Front (pre-reveal) = recall view: Arabic + context āyāt, meaning hidden. */}
-              <WordCard word={item.word} showFront={false} />
+              <WordCard word={item.word} showFront={false} knownMap={knownMap} />
             </Animated.View>
 
             <Animated.View
@@ -581,7 +587,7 @@ export function TodaySessionScreen() {
               style={[styles.cardFace, revealedFaceStyle]}
             >
               {/* Revealed = full card: meaning, transliteration, root, occurrences, āyāt. */}
-              <WordCard word={item.word} showFront />
+              <WordCard word={item.word} showFront knownMap={knownMap} />
             </Animated.View>
           </Animated.View>
         </GestureDetector>
