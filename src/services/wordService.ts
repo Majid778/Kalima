@@ -1,7 +1,98 @@
 // src/services/wordService.ts
 // Data service for word and level queries
 
-import { eq, asc } from 'drizzle-orm';
+import { and, eq, asc, inArray, ne }
+
+export async function getWordsByRoot(
+  db: DB,
+  root: string | null,
+  excludeWordId: number,
+  limit = 12,
+): Promise<{ id: number; arabic: string; meaning: string; root: string | null }[]> {
+  const trimmedRoot = root?.trim();
+  if (!trimmedRoot) return [];
+
+  const rows = await db.select({
+    id: words.id,
+    arabic: words.arabic,
+    meaning: words.meaning,
+    root: words.root,
+  })
+    .from(words)
+    .where(and(eq(words.root, trimmedRoot), ne(words.id, excludeWordId)))
+    .orderBy(asc(words.frequencyRank))
+    .limit(limit);
+
+  return rows.map(row => ({
+    id: row.id,
+    arabic: row.arabic,
+    meaning: row.meaning,
+    root: row.root,
+  }));
+}
+
+export async function getRootSiblingsForWords(
+  db: DB,
+  wordIds: number[],
+): Promise<Map<number, RootSibling[]>> {
+  const result = new Map<number, RootSibling[]>(
+    wordIds.map(wordId => [wordId, []]),
+  );
+
+  if (wordIds.length === 0) return result;
+
+  const rootRows = await db.select({
+    id: words.id,
+    root: words.root,
+  })
+    .from(words)
+    .where(inArray(words.id, wordIds));
+
+  const rootByWordId = new Map<number, string>();
+  for (const row of rootRows) {
+    if (row.root) {
+      rootByWordId.set(row.id, row.root);
+    }
+  }
+
+  const roots = Array.from(new Set(rootByWordId.values()));
+  if (roots.length === 0) return result;
+
+  const siblingRows = await db.select({
+    id: words.id,
+    arabic: words.arabic,
+    meaning: words.meaning,
+    root: words.root,
+  })
+    .from(words)
+    .where(inArray(words.root, roots))
+    .orderBy(asc(words.frequencyRank));
+
+  const siblingsByRoot = new Map<string, RootSibling[]>();
+  for (const row of siblingRows) {
+    if (!row.root) continue;
+
+    const siblings = siblingsByRoot.get(row.root) ?? [];
+    siblings.push({
+      id: row.id,
+      arabic: row.arabic,
+      meaning: row.meaning,
+    });
+    siblingsByRoot.set(row.root, siblings);
+  }
+
+  for (const wordId of wordIds) {
+    const wordRoot = rootByWordId.get(wordId);
+    if (!wordRoot) continue;
+
+    result.set(
+      wordId,
+      (siblingsByRoot.get(wordRoot) ?? []).filter(sibling => sibling.id !== wordId),
+    );
+  }
+
+  return result;
+} from 'drizzle-orm';
 import type { ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
 import { words, wordVerses, levels } from '../data/schema';
 import type * as schema from '../data/schema';
@@ -24,6 +115,12 @@ export interface WordWithVerses {
 }
 
 type DB = ExpoSQLiteDatabase<typeof schema>;
+
+export type RootSibling = {
+  id: number;
+  arabic: string;
+  meaning: string;
+};
 
 /**
  * Get all words for a level, grouped with their verses.

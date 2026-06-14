@@ -6,11 +6,14 @@ interface StreakState {
   activityDates: Record<string, number>;
   currentStreak: number;
   longestStreak: number;
+  graceTokens: number;
   lastActivityDate: string | null;
   celebratedMilestones: number[];
   recordActivity: (today: string) => void;
   markMilestoneCelebrated: (m: number) => void;
 }
+
+const GRACE_TOKEN_CAP = 1;
 
 export interface ActivityCell {
   date: string;
@@ -98,6 +101,7 @@ export const useStreakStore = create<StreakState>()(
       activityDates: {},
       currentStreak: 0,
       longestStreak: 0,
+      graceTokens: GRACE_TOKEN_CAP,
       lastActivityDate: null,
       celebratedMilestones: [],
       recordActivity: (today) => set((state) => {
@@ -105,11 +109,15 @@ export const useStreakStore = create<StreakState>()(
           ...state.activityDates,
           [today]: (state.activityDates[today] ?? 0) + 1,
         };
+        const currentStreak = computeStreak(activityDates, today);
 
         return {
           activityDates,
-          currentStreak: computeStreak(activityDates, today),
+          currentStreak,
           longestStreak: computeLongest(activityDates),
+          graceTokens: currentStreak >= 7
+            ? GRACE_TOKEN_CAP
+            : Math.min(state.graceTokens ?? GRACE_TOKEN_CAP, GRACE_TOKEN_CAP),
           lastActivityDate: today,
         };
       }),

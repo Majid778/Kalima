@@ -8,7 +8,16 @@ import { PracticeHomeScreen } from '../screens/practice/PracticeHomeScreen';
 import { QuizHomeScreen } from '../screens/quiz/QuizHomeScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 
-const Tab = createBottomTabNavigator();
+export type BottomTabParamList = {
+  Journey: undefined;
+  Learn: undefined;
+  Today: undefined;
+  Practice: undefined;
+  Quiz: undefined;
+  Profile: undefined;
+};
+
+const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
   Journey:  { active: 'compass',        inactive: 'compass-outline' },

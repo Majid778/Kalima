@@ -1,12 +1,12 @@
 import React from 'react';
-import { Text, StyleSheet, TextStyle, TextProps } from 'react-native';
+import { Text, StyleSheet, TextStyle, TextProps, StyleProp } from 'react-native';
 import { fonts, arabicFontSizes, arabicLineHeights, ArabicFontSize } from '../theme/typography';
 import { colors } from '../theme/colors';
 import { useSettingsStore } from '../stores/settingsStore';
 
 interface ArabicTextProps extends Omit<TextProps, 'style'> {
   children: string;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
   size?: ArabicFontSize;
   color?: string;
 }

@@ -5,6 +5,7 @@ describe('settingsStore', () => {
     useSettingsStore.setState({
       arabicFontSize: 'medium',
       showTransliteration: true,
+      reciterId: 'alafasy',
     });
   });
 
@@ -23,6 +24,11 @@ describe('settingsStore', () => {
     expect(state.showTransliteration).toBe(true);
   });
 
+  it('has initial reciterId of alafasy', () => {
+    const state = useSettingsStore.getState();
+    expect(state.reciterId).toBe('alafasy');
+  });
+
   it('setArabicFontSize updates state to large', () => {
     useSettingsStore.getState().setArabicFontSize('large');
     expect(useSettingsStore.getState().arabicFontSize).toBe('large');
@@ -36,5 +42,10 @@ describe('settingsStore', () => {
   it('setShowTransliteration updates state to false', () => {
     useSettingsStore.getState().setShowTransliteration(false);
     expect(useSettingsStore.getState().showTransliteration).toBe(false);
+  });
+
+  it('setReciterId updates state', () => {
+    useSettingsStore.getState().setReciterId('husary');
+    expect(useSettingsStore.getState().reciterId).toBe('husary');
   });
 });

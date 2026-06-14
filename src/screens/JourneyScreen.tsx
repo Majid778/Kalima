@@ -1,12 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
-  ActivityIndicator,
   StyleSheet,
   ScrollView,
-  Modal,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,11 +20,16 @@ import { getPracticeStats } from '../services/practiceService';
 import { getLocalToday } from '../services/sm2';
 import { useStreakStore } from '../stores/streakStore';
 import { ArabicText } from '../components/ArabicText';
-import { colors } from '../theme/colors';
+import { MilestoneMoment } from '../components/MilestoneMoment';
+import { VerseTokens } from '../components/VerseTokens';
+import { Button, Card, SacredNumber, Skeleton } from '../components/ui';
+import type { ThemeTokens } from '../theme/theme';
+import { useTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 type TodaysVerse = Awaited<ReturnType<typeof getTodaysVerse>>;
+const TOKENIZED_VERSE_MAX_LENGTH = 180;
 
 interface JourneyStats {
   quranPercent: number;
@@ -39,6 +41,8 @@ interface JourneyStats {
 
 export function JourneyScreen() {
   const navigation = useNavigation<NavProp>();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const currentStreak = useStreakStore((s) => s.currentStreak);
   const [stats, setStats] = useState<JourneyStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,146 +109,165 @@ export function JourneyScreen() {
   if (isLoading || !stats) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ScrollView contentContainerStyle={styles.content}>
+          <Card style={styles.heroCard}>
+            <Skeleton height={20} width={180} />
+            <Skeleton height={60} width={128} style={styles.heroSkeleton} />
+            <Skeleton height={10} width="100%" radius={5} />
+          </Card>
+          <View style={styles.statsRow}>
+            <Card style={styles.statBlock}>
+              <Skeleton height={30} width={48} />
+              <Skeleton height={14} width={88} style={styles.skeletonSpacing} />
+            </Card>
+            <Card style={styles.statBlock}>
+              <Skeleton height={30} width={48} />
+              <Skeleton height={14} width={82} style={styles.skeletonSpacing} />
+            </Card>
+            <Card style={styles.statBlock}>
+              <Skeleton height={30} width={48} />
+              <Skeleton height={14} width={56} style={styles.skeletonSpacing} />
+            </Card>
+          </View>
+          <Card style={styles.sectionCard}>
+            <Skeleton height={24} width={96} />
+            <Skeleton height={48} width="100%" radius={8} style={styles.skeletonSpacingLarge} />
+          </Card>
+        </ScrollView>
       </View>
     );
   }
 
-  const percentValue = Math.round(stats.quranPercent * 1000) / 10;
-  const percentLabel = `${percentValue.toFixed(1)}%`;
   const progressWidth = `${Math.min(100, Math.max(0, stats.quranPercent * 100))}%` as `${number}%`;
   const hasDueCards = stats.dueCount > 0;
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
+        <Card style={styles.heroCard}>
           <Text style={styles.heroLabel}>Qur'an words understood</Text>
-          <Text style={styles.percentHeadline}>{percentLabel}</Text>
+          <SacredNumber
+            percent={stats.quranPercent}
+            label="of the Qur'an's words"
+            style={styles.heroNumber}
+          />
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
-        </View>
+        </Card>
 
         <View style={styles.statsRow}>
-          <StatBlock label="Words learned" value={stats.wordsLearned} />
-          <StatBlock label="Levels done" value={stats.levelsCompleted} />
-          <StatBlock label="🔥 streak" value={currentStreak} />
+          <StatBlock styles={styles} label="Words learned" value={stats.wordsLearned} />
+          <StatBlock styles={styles} label="Levels done" value={stats.levelsCompleted} />
+          <StatBlock styles={styles} label="Streak" value={currentStreak} />
         </View>
 
-        <View style={styles.card}>
+        <Card style={styles.sectionCard}>
           <Text style={styles.cardTitle}>Continue</Text>
           {hasDueCards ? (
-            <Pressable
-              style={styles.primaryButton}
+            <Button
+              label={`Practice ${stats.dueCount} due`}
               onPress={() => navigation.navigate('PracticeSession')}
-            >
-              <Text style={styles.primaryButtonText}>Practice {stats.dueCount} due</Text>
-            </Pressable>
+            />
           ) : (
             <>
               <Text style={styles.caughtUpText}>All caught up</Text>
-              <Pressable
-                style={styles.secondaryButton}
+              <Button
+                label="Learn"
+                variant="secondary"
                 onPress={() => {
                   (navigation as unknown as { navigate: (screen: string) => void }).navigate('Learn');
                 }}
-              >
-                <Text style={styles.secondaryButtonText}>Learn</Text>
-              </Pressable>
+              />
             </>
           )}
-        </View>
+        </Card>
 
         {stats.todaysVerse && (
-          <View style={styles.card}>
+          <Card style={styles.sectionCard}>
             <Text style={styles.cardTitle}>Today's Verse</Text>
             <Text style={styles.verseReference}>
               {stats.todaysVerse.verse.surahNumber}:{stats.todaysVerse.verse.ayahNumber}
             </Text>
-            <ArabicText size="large" style={styles.verseArabic}>
-              {stats.todaysVerse.verse.arabicText}
-            </ArabicText>
+            {stats.todaysVerse.verse.arabicText.length <= TOKENIZED_VERSE_MAX_LENGTH ? (
+              <VerseTokens
+                verseText={stats.todaysVerse.verse.arabicText}
+                targetPosition={null}
+                size="large"
+              />
+            ) : (
+              <ArabicText size="large" style={styles.verseArabic}>
+                {stats.todaysVerse.verse.arabicText}
+              </ArabicText>
+            )}
             <Text style={styles.translation}>{stats.todaysVerse.verse.translation}</Text>
             <Text style={styles.knownWords}>
               You know {stats.todaysVerse.knownCount}/{stats.todaysVerse.totalCount} words in this verse
             </Text>
-          </View>
+          </Card>
         )}
       </ScrollView>
 
-      <Modal
+      <MilestoneMoment
         visible={celebrating !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={dismissCelebration}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>🎉</Text>
-            <Text style={styles.modalMessage}>
-              You understand {celebrating === null ? 0 : Math.round(celebrating * 100)}% of the Qur'an's words!
-            </Text>
-            <Pressable style={styles.primaryButton} onPress={dismissCelebration}>
-              <Text style={styles.primaryButtonText}>Keep going</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        percent={celebrating ?? 0}
+        onDismiss={dismissCelebration}
+      />
     </View>
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: number }) {
+function StatBlock({
+  label,
+  value,
+  styles,
+}: {
+  label: string;
+  value: number;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
-    <View style={styles.statBlock}>
+    <Card style={styles.statBlock}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </Card>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.surfaces.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: theme.surfaces.background,
   },
   content: {
     padding: 16,
     paddingBottom: 32,
   },
   heroCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 12,
   },
   heroLabel: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 14,
     marginBottom: 8,
   },
-  percentHeadline: {
-    color: colors.primary,
-    fontSize: 48,
-    fontWeight: '700',
+  heroNumber: {
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
   progressTrack: {
     height: 10,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: theme.surfaces.surfaceElevated,
     borderRadius: 5,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: theme.sacred.sacred,
     borderRadius: 5,
   },
   statsRow: {
@@ -254,66 +277,36 @@ const styles = StyleSheet.create({
   },
   statBlock: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
     padding: 12,
     alignItems: 'center',
   },
   statValue: {
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 4,
   },
   statLabel: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 12,
     textAlign: 'center',
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
+  sectionCard: {
     marginBottom: 12,
   },
   cardTitle: {
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
   },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
   caughtUpText: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 16,
     marginBottom: 12,
   },
   verseReference: {
-    color: colors.primary,
+    color: theme.sacred.sacred,
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -322,38 +315,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   translation: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 12,
   },
   knownWords: {
-    color: colors.textMuted,
+    color: theme.text.textMuted,
     fontSize: 13,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+  heroSkeleton: {
+    marginTop: 10,
+    marginBottom: 16,
   },
-  modalCard: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
+  skeletonSpacing: {
+    marginTop: 8,
   },
-  modalTitle: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  modalMessage: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 20,
+  skeletonSpacingLarge: {
+    marginTop: 16,
   },
 });

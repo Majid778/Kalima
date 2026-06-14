@@ -17,7 +17,7 @@ jest.mock('../../services/progressService', () => ({
 }));
 
 beforeEach(() => {
-  useSettingsStore.setState({ arabicFontSize: 'medium', showTransliteration: true });
+  useSettingsStore.setState({ theme: 'dark', arabicFontSize: 'medium', showTransliteration: true });
 });
 
 describe('ProfileScreen', () => {
@@ -34,6 +34,11 @@ describe('ProfileScreen', () => {
   test('renders Show Transliteration label', () => {
     const { getByText } = render(<ProfileScreen />);
     expect(getByText('Show Transliteration')).toBeTruthy();
+  });
+
+  test('renders Theme label', () => {
+    const { getByText } = render(<ProfileScreen />);
+    expect(getByText('Theme')).toBeTruthy();
   });
 
   test('renders S, M, L segments', () => {
@@ -56,9 +61,16 @@ describe('ProfileScreen', () => {
   });
 
   test('toggling switch updates showTransliteration to false', () => {
-    const { getByRole } = render(<ProfileScreen />);
-    const switchElement = getByRole('switch');
+    const { getAllByRole } = render(<ProfileScreen />);
+    const switchElement = getAllByRole('switch')[1];
     fireEvent(switchElement, 'valueChange', false);
     expect(useSettingsStore.getState().showTransliteration).toBe(false);
+  });
+
+  test('toggling theme switch updates theme to mushaf', () => {
+    const { getAllByRole } = render(<ProfileScreen />);
+    const switchElement = getAllByRole('switch')[0];
+    fireEvent(switchElement, 'valueChange', false);
+    expect(useSettingsStore.getState().theme).toBe('mushaf');
   });
 });

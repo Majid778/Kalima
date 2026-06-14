@@ -17,6 +17,54 @@ export interface DueCard extends WordWithVerses {
   status: string;
 }
 
+export interface LearnedWordStatus {
+  arabic: string;
+  status: string;
+  interval: number;
+  repetitions: number;
+}
+
+export interface ReaderVerse {
+  surahNumber: number;
+  ayahNumber: number;
+  arabicText: string;
+  translation: string;
+  wordPosition: number | null;
+}
+
+export type ReaderEntry = {
+  wordId: number;
+  arabic: string;
+  meaning: string;
+  transliteration: string;
+  root: string | null;
+  status: string;
+  interval: number;
+  repetitions: number;
+  verses: ReaderVerse[];
+};
+
+type ReaderSortableEntry = ReaderEntry & { frequencyRank: number };
+
+function readerNeedRank(status: string): number {
+  return status === 'new' || status === 'learning' ? 0 : 1;
+}
+
+export function sortReaderEntriesByNeed<T extends ReaderSortableEntry>(entries: readonly T[]): T[] {
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => {
+      const needDelta = readerNeedRank(a.entry.status) - readerNeedRank(b.entry.status);
+      if (needDelta !== 0) return needDelta;
+
+      const frequencyDelta = a.entry.frequencyRank - b.entry.frequencyRank;
+      if (frequencyDelta !== 0) return frequencyDelta;
+
+      return a.index - b.index;
+    })
+    .map(({ entry }) => entry);
+}
+
 /**
  * Get cards due for review, with verse data attached.
  * D-17: 200 card cap per session.

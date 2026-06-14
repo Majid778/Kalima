@@ -1,18 +1,76 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { ArabicText } from './ArabicText';
-import { colors } from '../theme/colors';
+import { VerseTokens } from './VerseTokens';
+import { RootChips } from './RootChips';
+import { useTheme } from '../theme/useTheme';
+import type { ThemeTokens } from '../theme/theme';
 import { useSettingsStore } from '../stores/settingsStore';
-import { highlightWordInVerse } from '../services/wordService';
-import type { WordWithVerses } from '../services/wordService';
+import type { RootSibling, WordWithVerses } from '../services/wordService';
+import type { WordStrength } from '../services/wordStrengthService';
 
 interface WordCardProps {
   word: WordWithVerses;
-  showFront?: boolean; // false = show only Arabic (flashcard front); default true = show all fields
+  showFront?: boolean; // false = front view; default true = show all learning fields
+  knownMap?: Map<string, WordStrength>;
+  cloze?: boolean;
+  rootSiblings?: RootSibling[];
+  onSelectWord?: (wordId: number) => void;
 }
 
-export function WordCard({ word, showFront = true }: WordCardProps) {
+type ExampleVerse = WordWithVerses['verses'][number];
+
+export function selectExampleVerses(
+  verses: WordWithVerses['verses'],
+  maxCount = 3,
+): WordWithVerses['verses'] {
+  return verses.slice(0, maxCount);
+}
+
+function ExampleVerseItem({
+  verse,
+  knownMap,
+  cloze,
+}: {
+  verse: ExampleVerse;
+  knownMap?: Map<string, WordStrength>;
+  cloze?: boolean;
+}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  return (
+    <View style={styles.verseSection}>
+      <VerseTokens
+        verseText={verse.arabicText}
+        targetPosition={verse.wordPosition}
+        knownMap={knownMap}
+        cloze={cloze}
+        size="small"
+      />
+
+      <Text style={styles.verseRef}>
+        {verse.surahNumber}:{verse.ayahNumber}
+      </Text>
+
+      <Text style={styles.verseTranslation}>{verse.translation}</Text>
+    </View>
+  );
+}
+
+export function WordCard({
+  word,
+  showFront = true,
+  knownMap,
+  cloze = false,
+  rootSiblings,
+  onSelectWord,
+}: WordCardProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const showTransliteration = useSettingsStore((s) => s.showTransliteration);
+  const exampleVerses = selectExampleVerses(word.verses);
+  const hasExampleVerses = exampleVerses.length > 0;
 
   // Arabic word is always shown
   const arabicSection = (
@@ -21,21 +79,41 @@ export function WordCard({ word, showFront = true }: WordCardProps) {
     </View>
   );
 
+  const verseExamplesSection = hasExampleVerses ? (
+    <>
+      <View style={styles.divider} />
+
+      <View style={styles.verseList}>
+        {exampleVerses.map((exampleVerse, index) => (
+          <ExampleVerseItem
+            key={`${exampleVerse.surahNumber}:${exampleVerse.ayahNumber}:${exampleVerse.wordPosition ?? 'plain'}:${index}`}
+            verse={exampleVerse}
+            knownMap={knownMap}
+            cloze={cloze}
+          />
+        ))}
+      </View>
+    </>
+  ) : null;
+
   if (!showFront) {
-    // Flashcard front: only Arabic word
     return (
       <View style={styles.card}>
-        <View style={styles.centeredContent}>{arabicSection}</View>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            !hasExampleVerses && styles.centeredContent,
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {arabicSection}
+          {verseExamplesSection}
+        </ScrollView>
       </View>
     );
   }
 
   // Full card: all fields per D-02 order
-  const verse = word.verses.length > 0 ? word.verses[0] : null;
-  const highlight = verse
-    ? highlightWordInVerse(verse.arabicText, verse.wordPosition)
-    : null;
-
   const rootPosText = [
     word.root ? `Root: ${word.root}` : null,
     word.partOfSpeech ?? null,
@@ -61,56 +139,27 @@ export function WordCard({ word, showFront = true }: WordCardProps) {
           <Text style={styles.rootPos}>{rootPosText}</Text>
         )}
 
+        <RootChips
+          root={word.root}
+          siblings={rootSiblings ?? []}
+          knownMap={knownMap}
+          onSelectWord={onSelectWord}
+        />
+
         <Text style={styles.occurrences}>
           Appears {word.occurrenceCount.toLocaleString()} times
         </Text>
 
-        {verse && (
-          <>
-            <View style={styles.divider} />
-
-            <View style={styles.verseSection}>
-              {highlight ? (
-                <Text style={styles.verseText}>
-                  {highlight.after.length > 0 && (
-                    <ArabicText size="small" style={styles.verseArabicInline}>
-                      {highlight.after + ' '}
-                    </ArabicText>
-                  )}
-                  <ArabicText
-                    size="small"
-                    color={colors.primary}
-                    style={styles.verseArabicInline}
-                  >
-                    {highlight.target}
-                  </ArabicText>
-                  {highlight.before.length > 0 && (
-                    <ArabicText size="small" style={styles.verseArabicInline}>
-                      {' ' + highlight.before}
-                    </ArabicText>
-                  )}
-                </Text>
-              ) : (
-                <ArabicText size="small">{verse.arabicText}</ArabicText>
-              )}
-
-              <Text style={styles.verseRef}>
-                {verse.surahNumber}:{verse.ayahNumber}
-              </Text>
-
-              <Text style={styles.verseTranslation}>{verse.translation}</Text>
-            </View>
-          </>
-        )}
+        {verseExamplesSection}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surfaces.surface,
     borderRadius: 12,
     padding: 24,
   },
@@ -132,25 +181,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   transliteration: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 8,
   },
   meaning: {
-    color: colors.text,
+    color: theme.text.textPrimary,
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 8,
   },
   rootPos: {
-    color: colors.textMuted,
+    color: theme.text.textMuted,
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 4,
   },
   occurrences: {
-    color: colors.textMuted,
+    color: theme.text.textMuted,
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 8,
@@ -158,30 +207,25 @@ const styles = StyleSheet.create({
   divider: {
     width: '80%',
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.surfaces.border,
     marginVertical: 16,
+  },
+  verseList: {
+    width: '100%',
+    gap: 16,
   },
   verseSection: {
     width: '100%',
     alignItems: 'center',
   },
-  verseText: {
-    writingDirection: 'rtl',
-    textAlign: 'right',
-    width: '100%',
-    marginBottom: 8,
-  },
-  verseArabicInline: {
-    textAlign: 'right',
-  },
   verseRef: {
-    color: colors.textMuted,
+    color: theme.text.textMuted,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 4,
   },
   verseTranslation: {
-    color: colors.textSecondary,
+    color: theme.text.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
