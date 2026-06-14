@@ -3,11 +3,11 @@ import {
   Modal,
   StyleSheet,
   Text,
-  useReducedMotion as useNativeReducedMotion,
   View,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion as useNativeReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,

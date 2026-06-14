@@ -1,7 +1,35 @@
 // src/services/wordService.ts
 // Data service for word and level queries
 
-import { and, eq, asc, inArray, ne }
+import { and, eq, asc, inArray, ne } from 'drizzle-orm';
+import type { ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
+import { words, wordVerses, levels } from '../data/schema';
+import type * as schema from '../data/schema';
+
+export interface WordWithVerses {
+  id: number;
+  arabic: string;
+  transliteration: string;
+  meaning: string;
+  root: string | null;
+  partOfSpeech: string | null;
+  occurrenceCount: number;
+  verses: {
+    surahNumber: number;
+    ayahNumber: number;
+    arabicText: string;
+    translation: string;
+    wordPosition: number | null;
+  }[];
+}
+
+type DB = ExpoSQLiteDatabase<typeof schema>;
+
+export type RootSibling = {
+  id: number;
+  arabic: string;
+  meaning: string;
+};
 
 export async function getWordsByRoot(
   db: DB,
@@ -92,35 +120,7 @@ export async function getRootSiblingsForWords(
   }
 
   return result;
-} from 'drizzle-orm';
-import type { ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
-import { words, wordVerses, levels } from '../data/schema';
-import type * as schema from '../data/schema';
-
-export interface WordWithVerses {
-  id: number;
-  arabic: string;
-  transliteration: string;
-  meaning: string;
-  root: string | null;
-  partOfSpeech: string | null;
-  occurrenceCount: number;
-  verses: {
-    surahNumber: number;
-    ayahNumber: number;
-    arabicText: string;
-    translation: string;
-    wordPosition: number | null;
-  }[];
 }
-
-type DB = ExpoSQLiteDatabase<typeof schema>;
-
-export type RootSibling = {
-  id: number;
-  arabic: string;
-  meaning: string;
-};
 
 /**
  * Get all words for a level, grouped with their verses.
@@ -179,7 +179,7 @@ export function highlightWordInVerse(
 ): { before: string; target: string; after: string } | null {
   if (wordPosition === null || wordPosition === undefined) return null;
 
-  const tokens = verseText.split(/\s+/);
+  const tokens = verseText.split(/\s+/).filter(token => token.length > 0);
   if (wordPosition < 0 || wordPosition >= tokens.length) return null;
 
   const before = tokens.slice(0, wordPosition).join(' ');

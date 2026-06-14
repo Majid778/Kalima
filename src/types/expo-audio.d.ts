@@ -5,6 +5,8 @@ declare module 'expo-audio' {
     replace: (source: string | null) => void;
     remove: () => void;
     seekTo: (seconds: number) => Promise<void> | void;
+    playing: boolean;
+    removed: boolean;
   }
 
   export function createAudioPlayer(source?: string | null): AudioPlayer;

@@ -101,7 +101,7 @@ export function recordEvent(
  * Start a new session and record it in state.
  * Returns the sessionId.
  */
-export function startSession(startScreen: string): string {
+export function startSession(startScreen: string, cardsInitial: number = 0): string {
   if (!initialized || !state) {
     throw new Error('Instrumentation runtime not initialized. Call initInstrumentationRuntime first.');
   }
@@ -117,8 +117,37 @@ export function startSession(startScreen: string): string {
     startScreen,
   });
 
+  // Seed the session's initial card count (drives completion-rate aggregation).
+  const summary = state.sessionSummaries[sessionId];
+  if (summary) {
+    state = {
+      ...state,
+      sessionSummaries: {
+        ...state.sessionSummaries,
+        [sessionId]: { ...summary, cardsInitial },
+      },
+    };
+  }
+
   persistState();
   return sessionId;
+}
+
+/**
+ * Record that a due card was reviewed in the current session (first presentation).
+ */
+export function recordCardReviewed(): void {
+  if (!initialized || !state || !state.currentSessionId) return;
+  const summary = state.sessionSummaries[state.currentSessionId];
+  if (!summary) return;
+  state = {
+    ...state,
+    sessionSummaries: {
+      ...state.sessionSummaries,
+      [state.currentSessionId]: { ...summary, cardsReviewed: summary.cardsReviewed + 1 },
+    },
+  };
+  persistState();
 }
 
 /**

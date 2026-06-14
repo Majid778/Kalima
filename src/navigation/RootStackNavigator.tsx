@@ -7,6 +7,9 @@ import { QuizSessionScreen } from '../screens/quiz/QuizSessionScreen';
 import { QuizResultScreen } from '../screens/quiz/QuizResultScreen';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
+import { TodaySessionScreen } from '../screens/today/TodaySessionScreen';
+import { TodayResultScreen } from '../screens/today/TodayResultScreen';
+import { ReaderScreen } from '../screens/reader/ReaderScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -15,6 +18,9 @@ export type RootStackParamList = {
   PracticeSession: undefined;
   QuizSession: { levelId: number; levelName: string };
   QuizResult: { levelId: number; levelName: string; score: number; total: number };
+  TodaySession: undefined;
+  TodayResult: undefined;
+  Reader: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +55,9 @@ export function RootStackNavigator() {
         component={QuizResultScreen}
         options={{ headerShown: false }}
       />
+      <RootStack.Screen name="TodaySession" component={TodaySessionScreen} options={{ headerShown: true, title: 'Today' }} />
+      <RootStack.Screen name="TodayResult" component={TodayResultScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Reader" component={ReaderScreen} options={{ headerShown: true, title: 'Reader' }} />
     </RootStack.Navigator>
   );
 }

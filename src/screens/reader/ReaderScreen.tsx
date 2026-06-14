@@ -130,7 +130,8 @@ export function ReaderScreen() {
           message="Start a session to begin seeing Qur'anic words in context."
           action={{
             label: 'Start a session',
-            onPress: () => navigation.navigate('Tabs', { screen: 'Today' }),
+            onPress: () =>
+              navigation.navigate('Tabs', { screen: 'Today' } as never),
           }}
         />
       )}

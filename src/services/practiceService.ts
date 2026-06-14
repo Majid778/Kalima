@@ -229,3 +229,127 @@ export async function getNextReviewDate(db: DB): Promise<string | null> {
 
   return result[0]?.dueDate ?? null;
 }
+
+/**
+ * Get the wordIds already present in the spaced-repetition queue (any status).
+ */
+export async function getProgressWordIds(db: DB): Promise<number[]> {
+  const rows = await db.select({ wordId: wordProgress.wordId }).from(wordProgress);
+  return rows.map((r) => r.wordId);
+}
+
+/**
+ * Every word in the SR queue with the fields needed to build the known-word map.
+ */
+export async function getLearnedWordStatuses(db: DB): Promise<LearnedWordStatus[]> {
+  return db
+    .select({
+      arabic: words.arabic,
+      status: wordProgress.status,
+      interval: wordProgress.interval,
+      repetitions: wordProgress.repetitions,
+    })
+    .from(wordProgress)
+    .innerJoin(words, eq(words.id, wordProgress.wordId));
+}
+
+/**
+ * Reader feed: in-progress words with verses, need-sorted (weakest first).
+ */
+export async function getReaderEntries(db: DB, limit: number = 100): Promise<ReaderEntry[]> {
+  const progressRows = await db
+    .select({
+      wordId: words.id,
+      arabic: words.arabic,
+      meaning: words.meaning,
+      transliteration: words.transliteration,
+      root: words.root,
+      frequencyRank: words.frequencyRank,
+      status: wordProgress.status,
+      interval: wordProgress.interval,
+      repetitions: wordProgress.repetitions,
+    })
+    .from(wordProgress)
+    .innerJoin(words, eq(words.id, wordProgress.wordId));
+
+  if (progressRows.length === 0) return [];
+
+  const orderedRows = sortReaderEntriesByNeed(
+    progressRows.map((row): ReaderSortableEntry => ({
+      wordId: row.wordId,
+      arabic: row.arabic,
+      meaning: row.meaning,
+      transliteration: row.transliteration,
+      root: row.root,
+      frequencyRank: row.frequencyRank,
+      status: row.status,
+      interval: row.interval,
+      repetitions: row.repetitions,
+      verses: [],
+    })),
+  ).slice(0, limit);
+
+  if (orderedRows.length === 0) return [];
+
+  const wordIds = orderedRows.map((row) => row.wordId);
+  const verseRows = await db
+    .select()
+    .from(wordVerses)
+    .where(inArray(wordVerses.wordId, wordIds))
+    .orderBy(asc(wordVerses.wordId), asc(wordVerses.id));
+
+  const verseMap = new Map<number, ReaderVerse[]>();
+  for (const verse of verseRows) {
+    const grouped = verseMap.get(verse.wordId) ?? [];
+    grouped.push({
+      surahNumber: verse.surahNumber,
+      ayahNumber: verse.ayahNumber,
+      arabicText: verse.arabicText,
+      translation: verse.translation,
+      wordPosition: verse.wordPosition,
+    });
+    verseMap.set(verse.wordId, grouped);
+  }
+
+  return orderedRows.map(({ frequencyRank: _frequencyRank, ...entry }) => ({
+    ...entry,
+    verses: verseMap.get(entry.wordId) ?? [],
+  }));
+}
+
+/**
+ * Per-day counts of cards coming due in [fromDate, fromDate+days); anything due
+ * on/before fromDate is folded into fromDate. Feeds local review notifications.
+ */
+export async function getDueCountsByDate(
+  db: DB,
+  fromDate: string,
+  days: number,
+): Promise<{ date: string; count: number }[]> {
+  const rows = await db
+    .select({ dueDate: wordProgress.dueDate, c: count() })
+    .from(wordProgress)
+    .groupBy(wordProgress.dueDate);
+
+  const horizon = addLocalDays(fromDate, days);
+  const tally = new Map<string, number>();
+  for (const row of rows) {
+    const due = row.dueDate <= fromDate ? fromDate : row.dueDate;
+    if (due >= fromDate && due < horizon) {
+      tally.set(due, (tally.get(due) ?? 0) + Number(row.c));
+    }
+  }
+  return Array.from(tally.entries())
+    .map(([date, c]) => ({ date, count: c }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+function addLocalDays(date: string, days: number): string {
+  const parsed = new Date(`${date}T00:00:00`);
+  parsed.setDate(parsed.getDate() + days);
+  return [
+    parsed.getFullYear(),
+    String(parsed.getMonth() + 1).padStart(2, '0'),
+    String(parsed.getDate()).padStart(2, '0'),
+  ].join('-');
+}

@@ -39,18 +39,18 @@ export function AyahAudioButton({
   const isPlayingThisAyah = playbackState.playingUrl === audioUrl;
   const isLoading = playbackState.isLoading && isPlayingThisAyah;
 
-  const handlePress = useCallback(async () => {
-    await hapticLight();
+  const handlePress = useCallback(() => {
+    hapticLight();
     if (isPlayingThisAyah) {
-      await stopAudio();
+      stopAudio();
     } else {
-      await playAyah(audioUrl);
+      playAyah(audioUrl);
     }
   }, [isPlayingThisAyah, audioUrl]);
 
   const accessibilityLabel = isPlayingThisAyah
-    ? `Stop āyah ${surahNumber}:${ayahNumber} recitation`
-    : `Play āyah ${surahNumber}:${ayahNumber} recitation`;
+    ? `Stop ayah ${surahNumber}:${ayahNumber} recitation`
+    : `Play ayah ${surahNumber}:${ayahNumber} recitation`;
 
   return (
     <Pressable
@@ -61,7 +61,7 @@ export function AyahAudioButton({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: pressed ? theme.colors.primaryDark : theme.colors.primary,
+          backgroundColor: pressed ? theme.action.actionPressed : theme.action.action,
         },
       ]}
       accessible
@@ -70,11 +70,11 @@ export function AyahAudioButton({
     >
       <View style={styles.iconContainer}>
         {isLoading ? (
-          <ActivityIndicator size="small" color={theme.colors.text} />
+          <ActivityIndicator size="small" color={theme.text.onAction} />
         ) : isPlayingThisAyah ? (
-          <Ionicons name="pause" size={size * 0.5} color={theme.colors.text} />
+          <Ionicons name="pause" size={size * 0.5} color={theme.text.onAction} />
         ) : (
-          <Ionicons name="play" size={size * 0.5} color={theme.colors.text} />
+          <Ionicons name="play" size={size * 0.5} color={theme.text.onAction} />
         )}
       </View>
     </Pressable>

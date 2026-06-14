@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { JourneyScreen } from '../screens/JourneyScreen';
+import { TodayHomeScreen } from '../screens/today/TodayHomeScreen';
 import { LevelListScreen } from '../screens/learn/LevelListScreen';
 import { PracticeHomeScreen } from '../screens/practice/PracticeHomeScreen';
 import { QuizHomeScreen } from '../screens/quiz/QuizHomeScreen';
@@ -21,6 +22,7 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
   Journey:  { active: 'compass',        inactive: 'compass-outline' },
+  Today:    { active: 'today',          inactive: 'today-outline' },
   Learn:    { active: 'book',           inactive: 'book-outline' },
   Practice: { active: 'refresh-circle', inactive: 'refresh-circle-outline' },
   Quiz:     { active: 'help-circle',    inactive: 'help-circle-outline' },
@@ -49,6 +51,7 @@ export function BottomTabNavigator() {
         },
       })}
     >
+      <Tab.Screen name="Today" component={TodayHomeScreen} />
       <Tab.Screen name="Journey" component={JourneyScreen} />
       <Tab.Screen name="Learn" component={LevelListScreen} />
       <Tab.Screen name="Practice" component={PracticeHomeScreen} />

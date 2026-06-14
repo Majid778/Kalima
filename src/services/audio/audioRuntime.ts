@@ -41,8 +41,8 @@ function emit(nextState: AudioPlaybackState): void {
 
 function loadExpoAudio(): ExpoAudioModule | null {
   try {
-    const dynamicRequire = eval('require') as (moduleName: string) => unknown;
-    const expoAudio = dynamicRequire('expo-audio') as Partial<ExpoAudioModule>;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const expoAudio = require('expo-audio') as Partial<ExpoAudioModule>;
 
     if (typeof expoAudio.createAudioPlayer === 'function') {
       return expoAudio as ExpoAudioModule;
