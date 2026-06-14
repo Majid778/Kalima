@@ -17,7 +17,13 @@ jest.mock('../../services/progressService', () => ({
 }));
 
 beforeEach(() => {
-  useSettingsStore.setState({ theme: 'dark', arabicFontSize: 'medium', showTransliteration: true });
+  useSettingsStore.setState({
+    theme: 'dark',
+    arabicFontSize: 'medium',
+    showTransliteration: true,
+    reciterId: 'alafasy',
+    autoPlayAudio: false,
+  });
 });
 
 describe('ProfileScreen', () => {
@@ -34,6 +40,11 @@ describe('ProfileScreen', () => {
   test('renders Show Transliteration label', () => {
     const { getByText } = render(<ProfileScreen />);
     expect(getByText('Show Transliteration')).toBeTruthy();
+  });
+
+  test('renders Auto-play recitation label', () => {
+    const { getByText } = render(<ProfileScreen />);
+    expect(getByText('Auto-play recitation')).toBeTruthy();
   });
 
   test('renders Theme label', () => {
@@ -65,6 +76,13 @@ describe('ProfileScreen', () => {
     const switchElement = getAllByRole('switch')[1];
     fireEvent(switchElement, 'valueChange', false);
     expect(useSettingsStore.getState().showTransliteration).toBe(false);
+  });
+
+  test('toggling auto-play switch updates autoPlayAudio to true', () => {
+    const { getAllByRole } = render(<ProfileScreen />);
+    const switchElement = getAllByRole('switch')[2];
+    fireEvent(switchElement, 'valueChange', true);
+    expect(useSettingsStore.getState().autoPlayAudio).toBe(true);
   });
 
   test('toggling theme switch updates theme to mushaf', () => {

@@ -8,6 +8,7 @@ import type { ThemeTokens } from '../theme/theme';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { RootSibling, WordWithVerses } from '../services/wordService';
 import type { WordStrength } from '../services/wordStrengthService';
+import { AyahAudioButton } from './audio/AyahAudioButton';
 
 interface WordCardProps {
   word: WordWithVerses;
@@ -49,9 +50,16 @@ function ExampleVerseItem({
         size="small"
       />
 
-      <Text style={styles.verseRef}>
-        {verse.surahNumber}:{verse.ayahNumber}
-      </Text>
+      <View style={styles.verseRefRow}>
+        <Text style={styles.verseRef}>
+          {verse.surahNumber}:{verse.ayahNumber}
+        </Text>
+        <AyahAudioButton
+          surahNumber={verse.surahNumber}
+          ayahNumber={verse.ayahNumber}
+          size={36}
+        />
+      </View>
 
       <Text style={styles.verseTranslation}>{verse.translation}</Text>
     </View>
@@ -218,11 +226,16 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  verseRefRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
   verseRef: {
     color: theme.text.textMuted,
     fontSize: 13,
     textAlign: 'center',
-    marginBottom: 4,
   },
   verseTranslation: {
     color: theme.text.textSecondary,

@@ -37,8 +37,11 @@ import { WordCard } from '../../components/WordCard';
 import { GradeButtons } from '../../components/GradeButtons';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { swipeDirectionToGrade } from '../../components/today/swipeGrade';
+import { ayahAudioUrl, getReciterById } from '../../services/audio/audioSource';
+import { playAyah, stopAudio } from '../../services/audio/audioRuntime';
 import type { ThemeTokens } from '../../theme/theme';
 import { useTheme } from '../../theme/useTheme';
+import { useSettingsStore } from '../../stores/settingsStore';
 import {
   recordEvent,
   startSession,
@@ -119,6 +122,8 @@ export function TodaySessionScreen() {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const hints = useMemo(() => getHints(theme), [theme]);
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudio);
+  const reciterId = useSettingsStore((s) => s.reciterId);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
   // Known-word map for in-āyah status coloring (P2); optional — WordCard degrades
   // to target-only coloring when absent.
@@ -240,6 +245,27 @@ export function TodaySessionScreen() {
       ? nextValue
       : withSpring(nextValue, SPRING_CONFIG);
   }, [currentItemIndex, isRevealed, reduceMotion, revealProgress]);
+
+  useEffect(() => {
+    if (!sessionState?.revealed || !autoPlayAudio) return;
+
+    const item = sessionState.sequence.items[sessionState.currentIndex];
+    const verse = item?.word.verses[0];
+    if (!verse) return;
+
+    const reciter = getReciterById(reciterId);
+    playAyah(ayahAudioUrl(reciter, verse.surahNumber, verse.ayahNumber));
+
+    return () => {
+      stopAudio();
+    };
+  }, [
+    autoPlayAudio,
+    reciterId,
+    sessionState?.currentIndex,
+    sessionState?.revealed,
+    sessionState?.sequence.items,
+  ]);
 
   const handleCardReveal = useCallback(() => {
     setSessionState(prev => {

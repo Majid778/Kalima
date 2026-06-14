@@ -7,6 +7,7 @@ export type Reciter = {
 export const DEFAULT_RECITER_ID = 'alafasy';
 
 // Streams ayah-level audio from everyayah.com. Production must confirm reciter licensing before release.
+// Future word-level audio requires licensed word recordings; track as a P5 item before adding it.
 export const RECITERS: Reciter[] = [
   { id: 'alafasy', name: 'Mishary Alafasy', folder: 'Alafasy_128kbps' },
   { id: 'husary', name: 'Mahmoud Al-Husary', folder: 'Husary_128kbps' },

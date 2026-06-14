@@ -6,6 +6,7 @@ describe('settingsStore', () => {
       arabicFontSize: 'medium',
       showTransliteration: true,
       reciterId: 'alafasy',
+      autoPlayAudio: false,
     });
   });
 
@@ -29,6 +30,11 @@ describe('settingsStore', () => {
     expect(state.reciterId).toBe('alafasy');
   });
 
+  it('has initial autoPlayAudio of false', () => {
+    const state = useSettingsStore.getState();
+    expect(state.autoPlayAudio).toBe(false);
+  });
+
   it('setArabicFontSize updates state to large', () => {
     useSettingsStore.getState().setArabicFontSize('large');
     expect(useSettingsStore.getState().arabicFontSize).toBe('large');
@@ -47,5 +53,10 @@ describe('settingsStore', () => {
   it('setReciterId updates state', () => {
     useSettingsStore.getState().setReciterId('husary');
     expect(useSettingsStore.getState().reciterId).toBe('husary');
+  });
+
+  it('setAutoPlayAudio updates state', () => {
+    useSettingsStore.getState().setAutoPlayAudio(true);
+    expect(useSettingsStore.getState().autoPlayAudio).toBe(true);
   });
 });

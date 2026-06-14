@@ -24,12 +24,18 @@ import { getLocalToday } from '../services/sm2';
 import { evaluateBadges } from '../services/motivation/badges';
 import { computeKindStreak } from '../services/motivation/kindStreak';
 import { computeWeeklyReflection } from '../services/motivation/weeklyReflection';
+import { RECITERS, getReciterById } from '../services/audio/audioSource';
 
 const FONT_SIZE_SEGMENTS: { label: string; value: ArabicFontSize }[] = [
   { label: 'S', value: 'small' },
   { label: 'M', value: 'medium' },
   { label: 'L', value: 'large' },
 ];
+
+const RECITER_SEGMENTS = RECITERS.map((reciter) => ({
+  label: reciter.name.split(' ')[0],
+  value: reciter.id,
+}));
 
 export function ProfileScreen() {
   const theme = useTheme();
@@ -43,9 +49,13 @@ export function ProfileScreen() {
   const themeName = useSettingsStore((s) => s.theme);
   const arabicFontSize = useSettingsStore((s) => s.arabicFontSize);
   const showTransliteration = useSettingsStore((s) => s.showTransliteration);
+  const reciterId = useSettingsStore((s) => s.reciterId);
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudio);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const setArabicFontSize = useSettingsStore((s) => s.setArabicFontSize);
   const setShowTransliteration = useSettingsStore((s) => s.setShowTransliteration);
+  const setReciterId = useSettingsStore((s) => s.setReciterId);
+  const setAutoPlayAudio = useSettingsStore((s) => s.setAutoPlayAudio);
   const arabicLevel = useOnboardingStore((s) => s.arabicLevel);
   const activityDates = useStreakStore((s) => s.activityDates);
   const currentStreak = useStreakStore((s) => s.currentStreak);
@@ -92,6 +102,7 @@ export function ProfileScreen() {
     () => computeWeeklyReflection(activityDates, today),
     [activityDates, today],
   );
+  const selectedReciter = useMemo(() => getReciterById(reciterId), [reciterId]);
   const hasAnyActivity = useMemo(
     () => Object.values(activityDates).some(count => count > 0),
     [activityDates],
@@ -207,6 +218,7 @@ export function ProfileScreen() {
               <Text style={styles.rowHint}>{themeName === 'dark' ? 'Dark' : 'Mushaf'}</Text>
             </View>
             <Switch
+              accessibilityLabel="Theme"
               value={themeName === 'dark'}
               onValueChange={(enabled) => setTheme(enabled ? 'dark' : 'mushaf')}
               trackColor={{
@@ -231,8 +243,42 @@ export function ProfileScreen() {
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Show Transliteration</Text>
             <Switch
+              accessibilityLabel="Show Transliteration"
               value={showTransliteration}
               onValueChange={setShowTransliteration}
+              trackColor={{
+                false: theme.surfaces.surfaceElevated,
+                true: theme.action.action,
+              }}
+              thumbColor={theme.surfaces.surface}
+            />
+          </View>
+        </View>
+
+        <View style={styles.audioSection}>
+          <Text style={styles.sectionHeader}>Audio</Text>
+
+          <View style={styles.row}>
+            <View style={styles.rowTextBlock}>
+              <Text style={styles.rowLabel}>Reciter</Text>
+              <Text style={styles.rowHint}>{selectedReciter.name}</Text>
+            </View>
+            <SegmentedControl
+              segments={RECITER_SEGMENTS}
+              selectedValue={reciterId}
+              onValueChange={setReciterId}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.rowTextBlock}>
+              <Text style={styles.rowLabel}>Auto-play recitation</Text>
+              <Text style={styles.rowHint}>Play the first example āyah after reveal.</Text>
+            </View>
+            <Switch
+              accessibilityLabel="Auto-play recitation"
+              value={autoPlayAudio}
+              onValueChange={setAutoPlayAudio}
               trackColor={{
                 false: theme.surfaces.surfaceElevated,
                 true: theme.action.action,
@@ -279,6 +325,9 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginTop: 28,
   },
   displaySection: {
+    marginTop: 28,
+  },
+  audioSection: {
     marginTop: 28,
   },
   reflectionCard: {

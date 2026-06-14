@@ -9,6 +9,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card, EmptyState, Skeleton } from '../../components/ui';
+import { AyahAudioButton } from '../../components/audio/AyahAudioButton';
 import { VerseTokens } from '../../components/VerseTokens';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { db } from '../../data/database';
@@ -180,9 +181,18 @@ function ReaderRow({
         <Card style={[styles.row, pressed ? styles.rowPressed : null]}>
           <View style={styles.rowHeader}>
             <View style={styles.referenceBlock}>
-              <Text style={styles.reference}>
-                {primaryVerse ? verseRef(primaryVerse) : 'No verse'}
-              </Text>
+              <View style={styles.referenceLine}>
+                <Text style={styles.reference}>
+                  {primaryVerse ? verseRef(primaryVerse) : 'No verse'}
+                </Text>
+                {primaryVerse ? (
+                  <AyahAudioButton
+                    surahNumber={primaryVerse.surahNumber}
+                    ayahNumber={primaryVerse.ayahNumber}
+                    size={36}
+                  />
+                ) : null}
+              </View>
               <Text style={styles.wordMeta}>{entry.root ? `Root ${entry.root}` : 'Root unavailable'}</Text>
             </View>
             <WordStrengthBadge strength={strength} />
@@ -206,7 +216,14 @@ function ReaderRow({
 
               {remainingVerses.map((verse, index) => (
                 <View key={`${verseRef(verse)}:${index}`} style={styles.extraVerse}>
-                  <Text style={styles.reference}>{verseRef(verse)}</Text>
+                  <View style={styles.referenceLine}>
+                    <Text style={styles.reference}>{verseRef(verse)}</Text>
+                    <AyahAudioButton
+                      surahNumber={verse.surahNumber}
+                      ayahNumber={verse.ayahNumber}
+                      size={36}
+                    />
+                  </View>
                   <VerseTokens
                     verseText={verse.arabicText}
                     targetPosition={verse.wordPosition}
@@ -253,6 +270,11 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   referenceBlock: {
     flex: 1,
+  },
+  referenceLine: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   reference: {
     color: theme.action.action,
