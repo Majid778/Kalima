@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, Share, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -7,7 +7,7 @@ import { useOnboardingStore, type ArabicLevel } from '../stores/onboardingStore'
 import { buildActivityGrid, useStreakStore } from '../stores/streakStore';
 import { BadgeShelf } from '../components/motivation/BadgeShelf';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Card } from '../components/ui';
+import { Button, Card } from '../components/ui';
 import { ArabicFontSize } from '../theme/typography';
 import { ThemeTokens } from '../theme/theme';
 import { useTheme } from '../theme/useTheme';
@@ -25,6 +25,8 @@ import { evaluateBadges } from '../services/motivation/badges';
 import { computeKindStreak } from '../services/motivation/kindStreak';
 import { computeWeeklyReflection } from '../services/motivation/weeklyReflection';
 import { RECITERS, getReciterById } from '../services/audio/audioSource';
+import { buildProgressSnapshot, restoreProgressSnapshot } from '../services/sync/progressSync';
+import { isValidSnapshot } from '../services/sync/progressSnapshot';
 
 const FONT_SIZE_SEGMENTS: { label: string; value: ArabicFontSize }[] = [
   { label: 'S', value: 'small' },
@@ -67,6 +69,9 @@ export function ProfileScreen() {
   const [levelsCompletedCount, setLevelsCompletedCount] = useState(0);
   const [arabicLevelLabel, setArabicLevelLabel] = useState<string | null>(null);
   const [completedLevels, setCompletedLevels] = useState<LevelProgressView[]>([]);
+  const [importText, setImportText] = useState('');
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [syncBusy, setSyncBusy] = useState(false);
 
   const loadProfile = useCallback(async () => {
     const [masteredCount, levelList, learnedCount, percent, completedCount] = await Promise.all([
@@ -117,6 +122,41 @@ export function ProfileScreen() {
   const consistencyLine = hasAnyActivity && (kindStreak === 0 || kindStreak > currentStreak)
     ? 'Welcome back - pick up where you left off.'
     : 'A steady rhythm grows through small returns.';
+
+  const handleExport = useCallback(async () => {
+    setSyncBusy(true);
+    setSyncMessage(null);
+    try {
+      const snapshot = await buildProgressSnapshot(db, new Date().toISOString());
+      await Share.share({ message: JSON.stringify(snapshot) });
+      setSyncMessage('Backup ready to save or share.');
+    } catch {
+      setSyncMessage('Could not create a backup right now.');
+    } finally {
+      setSyncBusy(false);
+    }
+  }, []);
+
+  const handleRestore = useCallback(async () => {
+    setSyncBusy(true);
+    setSyncMessage(null);
+    try {
+      const parsed: unknown = JSON.parse(importText);
+      if (!isValidSnapshot(parsed)) {
+        setSyncMessage('This backup does not look like a Kalima progress snapshot.');
+        return;
+      }
+
+      await restoreProgressSnapshot(db, parsed);
+      setSyncMessage('Progress restored. Your local reviews were kept when they were further along.');
+      setImportText('');
+      await loadProfile();
+    } catch {
+      setSyncMessage('Could not restore from that text. Check the backup and try again.');
+    } finally {
+      setSyncBusy(false);
+    }
+  }, [importText, loadProfile]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -287,6 +327,34 @@ export function ProfileScreen() {
             />
           </View>
         </View>
+
+        <View style={styles.backupSection}>
+          {/* Cloud sync is v2.1; this snapshot + mergeWordProgress are its foundation. */}
+          <Text style={styles.sectionHeader}>Backup & restore</Text>
+          <Button
+            label="Export backup"
+            onPress={handleExport}
+            disabled={syncBusy}
+            variant="secondary"
+          />
+          <TextInput
+            accessibilityLabel="Backup JSON"
+            multiline
+            onChangeText={setImportText}
+            placeholder="Paste backup JSON"
+            placeholderTextColor={theme.text.textMuted}
+            style={styles.backupInput}
+            value={importText}
+          />
+          <Button
+            label="Restore"
+            onPress={handleRestore}
+            disabled={syncBusy || importText.trim().length === 0}
+          />
+          {syncMessage !== null && (
+            <Text style={styles.backupMessage}>{syncMessage}</Text>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -329,6 +397,29 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   audioSection: {
     marginTop: 28,
+  },
+  backupSection: {
+    marginTop: 28,
+  },
+  backupInput: {
+    backgroundColor: theme.surfaces.surface,
+    borderColor: theme.surfaces.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    color: theme.text.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    marginTop: 12,
+    minHeight: 120,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  backupMessage: {
+    color: theme.text.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 12,
   },
   reflectionCard: {
     marginTop: 24,
