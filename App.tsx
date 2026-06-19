@@ -6,6 +6,7 @@ import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 import { setDb } from './src/data/database';
+import { initInstrumentationRuntime } from './src/services/instrumentationRuntime';
 
 const KalimaTheme = {
   ...DefaultTheme,
@@ -38,6 +39,11 @@ function DbGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setDb(sqlite);
+    // Initialize the instrumentation runtime before any screen mounts, so
+    // session/event calls (TodaySessionScreen et al.) don't throw on launch.
+    const now = new Date().toISOString();
+    const localDate = now.split('T')[0];
+    initInstrumentationRuntime(now, localDate);
     setReady(true);
   }, [sqlite]);
 
