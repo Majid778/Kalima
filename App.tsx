@@ -6,6 +6,8 @@ import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 import { setDb } from './src/data/database';
 import { initInstrumentationRuntime } from './src/services/instrumentationRuntime';
+import { useTheme } from './src/theme/useTheme';
+import { useSettingsStore } from './src/stores/settingsStore';
 
 // Only import expo-sqlite on native platforms
 let SQLiteProvider: any;
@@ -16,23 +18,26 @@ if (Platform.OS !== 'web') {
   useSQLiteContext = sqlite.useSQLiteContext;
 }
 
-const KalimaTheme = {
-  ...DefaultTheme,
-  dark: true,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: colors.primary,         // #4ade80
-    background: colors.background,   // #0a0a0a
-    card: colors.surface,            // #1a1a1a
-    text: colors.text,               // #FFFFFF
-    border: colors.border,           // #27272a
-    notification: colors.primary,    // #4ade80
-  },
-};
-
+// Navigation chrome (header bar, screen background) follows the active app theme,
+// so the header is parchment in the Mushaf theme and dark in the dark alternate.
 function AppContent() {
+  const t = useTheme();
+  const themeName = useSettingsStore((s) => s.theme);
+  const navTheme = {
+    ...DefaultTheme,
+    dark: themeName === 'dark',
+    colors: {
+      ...DefaultTheme.colors,
+      primary: t.action.action,
+      background: t.surfaces.background,
+      card: t.surfaces.background,
+      text: t.text.textPrimary,
+      border: t.surfaces.border,
+      notification: t.action.action,
+    },
+  };
   return (
-    <NavigationContainer theme={KalimaTheme}>
+    <NavigationContainer theme={navTheme}>
       <RootStackNavigator />
     </NavigationContainer>
   );

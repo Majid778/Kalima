@@ -15,6 +15,7 @@ import Animated, {
 import { Button, SacredNumber } from './ui';
 import { hapticSuccess, motionValue, SPRINGS, TIMINGS } from '../theme/motion';
 import type { ThemeTokens } from '../theme/theme';
+import { serifFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
 
 interface MilestoneMomentProps {
@@ -120,25 +121,28 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     alignItems: 'center',
-    backgroundColor: theme.surfaces.surface,
-    borderColor: theme.sacred.sacredMuted,
+    backgroundColor: theme.surfaces.surfaceElevated,
+    borderColor: theme.surfaces.border,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     paddingHorizontal: 24,
     paddingVertical: 28,
   },
   kicker: {
-    color: theme.sacred.sacred,
+    color: theme.sacred.sacredMuted,
     fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 2,
     marginBottom: 16,
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
   number: {
     marginBottom: 16,
   },
   message: {
     color: theme.text.textPrimary,
+    fontFamily: serifFamily,
     fontSize: 21,
     fontWeight: '700',
     lineHeight: 29,

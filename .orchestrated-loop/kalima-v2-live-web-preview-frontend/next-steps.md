@@ -35,6 +35,12 @@
 - ✅ **DEPLOYED to Vercel (prod, public): https://kalima-web-preview.vercel.app** — verified live render, 0 console errors, sql.js loads db over HTTPS.
 - ✅ Full-surface gallery captured (job tmp shots/): onboarding first-win, Today (25-item session, semantic pills), Journey (gold 0% hero + verse card), Learn (level grid), Profile (reciter picker + export/restore). All 0 errors.
 
+## DESIGN PIVOT (2026-06-22) — Boss disliked the current design
+- Made 10 styled mockups (Pencil MCP broke — wrote to a phantom doc, then disconnected on app restart; fell back to HTML mockups at `$JOBTMP/mockups/index.html`, screenshotted + opened in browser).
+- **Boss chose: #01 MUSHAF MANUSCRIPT (primary) + #09 Emerald Geometric (alternate).**
+- Cycle 3 in flight: implement Mushaf Manuscript as the DEFAULT theme on Today + Journey (parchment cream, deep gold accent, serif display numerals/titles/CTAs, gold hairline rules, manuscript verse card; no neon). codex-implementer a1ec9bee3b4164b59. Then verify on web preview + redeploy. Emerald Geometric = next alternate to prototype if Boss wants to compare.
+- Mockup palette refs in next-steps history / mockups/index.html sections "01" and "09".
+
 ## NEXT: frontend polish cycles to Quality Bar (the "especially the frontend" ask)
 Polish targets spotted (ranked):
 1. **Hero metric reads 0%** — only 6/1500 words "known" → rounds to 0%. Seed more `known` progress so the comprehension % shows a motivating non-zero number (it's THE hero metric).
@@ -42,8 +48,18 @@ Polish targets spotted (ranked):
 3. Audit dark+light parity (mushaf theme), motion (Reanimated worklets don't run on web — note: web can't fully verify 60fps/haptics; those stay a device check).
 4. Capture the Today SESSION card (reveal + grade) + Quiz + Reader — not yet screenshotted.
 
-## Re-deploy command (static export → prod)
-`cd /Users/majidibrahim/Documents/GitHub/Kalima && npx expo export -p web --output-dir /tmp/kw && rm -rf /tmp/kalima-web-preview && cp -R /tmp/kw /tmp/kalima-web-preview && cd /tmp/kalima-web-preview && vercel deploy --prod --yes`
+## Re-deploy command (static export → prod) — INCLUDES the Vercel node_modules font fix
+Vercel auto-excludes anything under `node_modules`, so Expo's vendored icon fonts
+(`assets/node_modules/@expo/vector-icons/...ttf`) 404 in prod (square tab icons).
+Fix: copy them to `/vendorassets` + a `vercel.json` rewrite. Full redeploy:
+```
+cd /Users/majidibrahim/Documents/GitHub/Kalima && npx expo export -p web --output-dir /tmp/kw
+rm -rf /tmp/kalima-web-preview && cp -R /tmp/kw /tmp/kalima-web-preview
+cd /tmp/kalima-web-preview && cp -R assets/node_modules vendorassets
+printf '{"rewrites":[{"source":"/assets/node_modules/:path*","destination":"/vendorassets/:path*"}]}' > vercel.json
+vercel deploy --prod --yes
+```
+(better Cycle 3 fix: a deploy script in the repo, or configure expo asset path off node_modules.)
 
 ## Polish targets already spotted (for later cycles)
 - Onboarding primary button is the v1 single GREEN accent on near-black — UX research flagged exactly this; warm toward gold + add hierarchy.

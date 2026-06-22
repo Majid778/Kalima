@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { hapticLight } from '../../theme/motion';
 import { ThemeTokens } from '../../theme/theme';
+import { serifFamily } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -110,6 +111,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   primaryLabel: {
     color: theme.text.onAction,
+    fontFamily: serifFamily,
   },
   secondaryLabel: {
     color: theme.text.textPrimary,

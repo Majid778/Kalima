@@ -40,6 +40,7 @@ import { swipeDirectionToGrade } from '../../components/today/swipeGrade';
 import { ayahAudioUrl, getReciterById } from '../../services/audio/audioSource';
 import { playAyah, stopAudio } from '../../services/audio/audioRuntime';
 import type { ThemeTokens } from '../../theme/theme';
+import { serifFamily } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 import { useSettingsStore } from '../../stores/settingsStore';
 import {
@@ -595,7 +596,7 @@ export function TodaySessionScreen() {
                     style={[
                       styles.swipeHint,
                       hintPositionStyles[grade],
-                      { borderColor: color, backgroundColor: `${color}1A` },
+                      { borderColor: color, backgroundColor: theme.surfaces.surfaceElevated },
                       hintStyles[grade],
                     ]}
                   >
@@ -707,6 +708,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   revealButtonText: {
     color: theme.text.onAction,
+    fontFamily: serifFamily,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -737,6 +739,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
+    fontFamily: serifFamily,
     fontWeight: 'bold',
     color: theme.text.textPrimary,
     marginBottom: 20,
@@ -781,6 +784,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   retryButtonText: {
     color: theme.text.onAction,
+    fontFamily: serifFamily,
     fontSize: 16,
     fontWeight: 'bold',
   },

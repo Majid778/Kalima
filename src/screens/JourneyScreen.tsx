@@ -19,17 +19,15 @@ import {
 import { getPracticeStats } from '../services/practiceService';
 import { getLocalToday } from '../services/sm2';
 import { useStreakStore } from '../stores/streakStore';
-import { ArabicText } from '../components/ArabicText';
 import { MilestoneMoment } from '../components/MilestoneMoment';
-import { VerseTokens } from '../components/VerseTokens';
-import { Button, Card, SacredNumber, Skeleton } from '../components/ui';
+import { Button, Card, Skeleton } from '../components/ui';
 import type { ThemeTokens } from '../theme/theme';
+import { serifFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 type TodaysVerse = Awaited<ReturnType<typeof getTodaysVerse>>;
-const TOKENIZED_VERSE_MAX_LENGTH = 180;
 
 interface JourneyStats {
   quranPercent: number;
@@ -140,17 +138,17 @@ export function JourneyScreen() {
 
   const progressWidth = `${Math.min(100, Math.max(0, stats.quranPercent * 100))}%` as `${number}%`;
   const hasDueCards = stats.dueCount > 0;
+  const displayPercent = Math.round(stats.quranPercent * 100);
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Card style={styles.heroCard}>
-          <Text style={styles.heroLabel}>Qur'an words understood</Text>
-          <SacredNumber
-            percent={stats.quranPercent}
-            label="of the Qur'an's words"
-            style={styles.heroNumber}
-          />
+        <Card elevated style={styles.heroCard}>
+          <Text style={styles.heroEyebrow}>Qur'an understood</Text>
+          <Text style={styles.heroPercent}>
+            {displayPercent}
+            <Text style={styles.heroPercentMark}>%</Text>
+          </Text>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
@@ -184,22 +182,14 @@ export function JourneyScreen() {
         </Card>
 
         {stats.todaysVerse && (
-          <Card style={styles.sectionCard}>
+          <Card elevated style={[styles.sectionCard, styles.verseCard]}>
             <Text style={styles.cardTitle}>Today's Verse</Text>
             <Text style={styles.verseReference}>
               {stats.todaysVerse.verse.surahNumber}:{stats.todaysVerse.verse.ayahNumber}
             </Text>
-            {stats.todaysVerse.verse.arabicText.length <= TOKENIZED_VERSE_MAX_LENGTH ? (
-              <VerseTokens
-                verseText={stats.todaysVerse.verse.arabicText}
-                targetPosition={null}
-                size="large"
-              />
-            ) : (
-              <ArabicText size="large" style={styles.verseArabic}>
-                {stats.todaysVerse.verse.arabicText}
-              </ArabicText>
-            )}
+            <Text style={styles.verseArabic}>
+              {stats.todaysVerse.verse.arabicText}
+            </Text>
             <Text style={styles.translation}>{stats.todaysVerse.verse.translation}</Text>
             <Text style={styles.knownWords}>
               You know {stats.todaysVerse.knownCount}/{stats.todaysVerse.totalCount} words in this verse
@@ -248,27 +238,41 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     paddingBottom: 32,
   },
   heroCard: {
+    alignItems: 'flex-start',
+    backgroundColor: theme.surfaces.surfaceElevated,
+    borderColor: theme.surfaces.border,
+    borderWidth: 1,
     marginBottom: 12,
   },
-  heroLabel: {
-    color: theme.text.textSecondary,
-    fontSize: 14,
-    marginBottom: 8,
+  heroEyebrow: {
+    color: theme.sacred.sacredMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 3,
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
-  heroNumber: {
-    alignItems: 'flex-start',
-    marginBottom: 16,
+  heroPercent: {
+    color: theme.sacred.sacred,
+    fontFamily: serifFamily,
+    fontSize: 76,
+    fontWeight: '800',
+    lineHeight: 86,
+    marginBottom: 14,
+  },
+  heroPercentMark: {
+    fontSize: 38,
+    lineHeight: 44,
   },
   progressTrack: {
-    height: 10,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    borderRadius: 5,
+    height: 2,
+    backgroundColor: theme.surfaces.border,
     overflow: 'hidden',
+    width: 172,
   },
   progressFill: {
     height: '100%',
     backgroundColor: theme.sacred.sacred,
-    borderRadius: 5,
   },
   statsRow: {
     flexDirection: 'row',
@@ -282,6 +286,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   statValue: {
     color: theme.text.textPrimary,
+    fontFamily: serifFamily,
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 4,
@@ -296,6 +301,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   cardTitle: {
     color: theme.text.textPrimary,
+    fontFamily: serifFamily,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
@@ -306,16 +312,27 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginBottom: 12,
   },
   verseReference: {
-    color: theme.sacred.sacred,
+    color: theme.sacred.sacredMuted,
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
   },
+  verseCard: {
+    backgroundColor: theme.surfaces.surfaceElevated,
+    borderColor: theme.surfaces.border,
+    borderWidth: 1,
+  },
   verseArabic: {
+    color: theme.text.textPrimary,
+    fontFamily: serifFamily,
+    fontSize: 26,
+    lineHeight: 44,
     marginBottom: 12,
+    textAlign: 'center',
+    writingDirection: 'rtl',
   },
   translation: {
-    color: theme.text.textSecondary,
+    color: theme.text.textMuted,
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 12,

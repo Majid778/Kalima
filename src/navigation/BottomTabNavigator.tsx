@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { serifFamily } from '../theme/typography';
 import { JourneyScreen } from '../screens/JourneyScreen';
 import { TodayHomeScreen } from '../screens/today/TodayHomeScreen';
 import { LevelListScreen } from '../screens/learn/LevelListScreen';
@@ -30,19 +31,21 @@ const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inacti
 };
 
 export function BottomTabNavigator() {
+  const theme = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: colors.primary,       // #4ade80 per D-02
-        tabBarInactiveTintColor: colors.textMuted,   // #71717a per D-02
+        tabBarActiveTintColor: theme.action.action,
+        tabBarInactiveTintColor: theme.text.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.surface,            // #1a1a1a dark tab bar
-          borderTopColor: colors.border,              // #27272a
+          backgroundColor: theme.surfaces.surface,
+          borderTopColor: theme.surfaces.border,
         },
         headerStyle: {
-          backgroundColor: colors.background,         // #0a0a0a
+          backgroundColor: theme.surfaces.background,
         },
-        headerTintColor: colors.text,                 // #FFFFFF
+        headerTintColor: theme.text.textPrimary,
+        headerTitleStyle: { fontFamily: serifFamily, color: theme.text.textPrimary },
         headerShadowVisible: false,
         tabBarIcon: ({ color, size, focused }) => {
           const icons = TAB_ICONS[route.name];

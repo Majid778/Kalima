@@ -24,7 +24,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      theme: 'dark',
+      theme: 'mushaf',
       arabicFontSize: 'medium',        // D-12 default
       showTransliteration: true,        // D-16 default
       notifications: { enabled: false, maxPerWeek: 3, preferredHour: 19 },

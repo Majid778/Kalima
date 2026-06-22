@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { ThemeTokens } from '../../theme/theme';
+import { serifFamily } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 
 interface SacredNumberProps {
@@ -32,6 +33,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   value: {
     color: theme.sacred.sacred,
+    fontFamily: serifFamily,
     fontSize: 52,
     fontWeight: '900',
   },

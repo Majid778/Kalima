@@ -12,6 +12,7 @@ import { getWordsForLevel } from '../../services/wordService';
 import { getLocalToday } from '../../services/sm2';
 import { buildTodaySession, SessionSequence } from '../../services/sessionService';
 import type { ThemeTokens } from '../../theme/theme';
+import { serifFamily } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -82,8 +83,9 @@ export function TodayHomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         {/* Hero count */}
-        <Text style={styles.heroCount}>{session.totalCount}</Text>
         <Text style={styles.heroLabel}>items for today</Text>
+        <Text style={styles.heroCount}>{session.totalCount}</Text>
+        <View style={styles.heroRule} />
 
         {/* Breakdown pills */}
         {hasItems && (
@@ -92,21 +94,18 @@ export function TodayHomeScreen() {
               <BreakdownPill
                 label="New"
                 count={session.newCount}
-                color={theme.action.action}
               />
             )}
             {session.reviewCount > 0 && (
               <BreakdownPill
                 label="Review"
                 count={session.reviewCount}
-                color={theme.learningState.due}
               />
             )}
             {session.checkCount > 0 && (
               <BreakdownPill
                 label="Check"
                 count={session.checkCount}
-                color={theme.feedback.warning}
               />
             )}
           </View>
@@ -136,20 +135,17 @@ export function TodayHomeScreen() {
 function BreakdownPill({
   label,
   count,
-  color,
 }: {
   label: string;
   count: number;
-  color: string;
 }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
-    <View style={[styles.pill, { borderColor: color }]}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
+    <View style={styles.pill}>
       <Text style={styles.pillText}>
-        {label}: {count}
+        {label} {count}
       </Text>
     </View>
   );
@@ -169,42 +165,49 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     alignItems: 'center',
   },
   heroCount: {
-    fontSize: 56,
+    color: theme.sacred.sacred,
+    fontFamily: serifFamily,
+    fontSize: 76,
     fontWeight: '800',
-    color: theme.action.action,
-    marginBottom: 4,
+    lineHeight: 86,
   },
   heroLabel: {
-    fontSize: 16,
-    color: theme.text.textSecondary,
-    marginBottom: 32,
+    color: theme.sacred.sacredMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 3,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  heroRule: {
+    backgroundColor: theme.surfaces.border,
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 24,
+    marginTop: 14,
+    width: 172,
   },
   breakdownContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 40,
+    marginBottom: 32,
     width: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   pill: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.surfaces.surface,
+    backgroundColor: theme.surfaces.background,
+    borderColor: theme.sacred.sacred,
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
   pillText: {
-    color: theme.text.textSecondary,
+    color: theme.sacred.sacred,
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   startButton: {
     width: '100%',
@@ -215,6 +218,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   startButtonText: {
     color: theme.text.onAction,
+    fontFamily: serifFamily,
     fontSize: 18,
     fontWeight: 'bold',
   },

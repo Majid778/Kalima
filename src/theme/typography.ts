@@ -1,3 +1,11 @@
+import { Platform } from 'react-native';
+
+export const serifFamily = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'Georgia, "Times New Roman", serif',
+});
+
 export const fonts = {
   arabic: 'KFGQPC-Uthmanic-Script-HAFS',  // D-03
 } as const;

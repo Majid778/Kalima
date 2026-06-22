@@ -17,6 +17,7 @@ import { getWordsLearnedCount, getQuranPercent } from '../../services/progressSe
 import { getLocalToday } from '../../services/sm2';
 import { useStreakStore } from '../../stores/streakStore';
 import type { ThemeTokens } from '../../theme/theme';
+import { serifFamily } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 import { recordEvent, recordActivityForToday } from '../../services/instrumentationRuntime';
 
@@ -147,6 +148,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   title: {
     fontSize: 32,
+    fontFamily: serifFamily,
     fontWeight: 'bold',
     color: theme.text.textPrimary,
     marginBottom: 40,
@@ -169,6 +171,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginBottom: 6,
   },
   cardValue: {
+    fontFamily: serifFamily,
     fontSize: 28,
     fontWeight: 'bold',
   },
@@ -181,6 +184,7 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   doneButtonText: {
     color: theme.text.onAction,
+    fontFamily: serifFamily,
     fontSize: 16,
     fontWeight: 'bold',
   },
