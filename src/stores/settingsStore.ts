@@ -41,6 +41,15 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'kalima-settings',
       storage: createJSONStorage(() => mmkvStorage),
+      // Bumped for the Mushaf redesign: installs from before the redesign had
+      // 'dark' persisted, which would override the new default. Adopt 'mushaf' once.
+      version: 2,
+      migrate: (persisted: any, version: number) => {
+        if (version < 2 && persisted) {
+          return { ...persisted, theme: 'mushaf' as ThemeName };
+        }
+        return persisted;
+      },
     },
   ),
 );
