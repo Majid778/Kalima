@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, View, ActivityIndicator } from 'react-native';
+import { Platform, View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 import { setDb } from './src/data/database';
 import { initInstrumentationRuntime } from './src/services/instrumentationRuntime';
+
+// Only import expo-sqlite on native platforms
+let SQLiteProvider: any;
+let useSQLiteContext: any;
+if (Platform.OS !== 'web') {
+  const sqlite = require('expo-sqlite');
+  SQLiteProvider = sqlite.SQLiteProvider;
+  useSQLiteContext = sqlite.useSQLiteContext;
+}
 
 const KalimaTheme = {
   ...DefaultTheme,
@@ -33,14 +41,12 @@ function AppContent() {
 // Initializes the shared `db` singleton from the SQLiteProvider's connection
 // (which has already copied the bundled asset) and holds rendering until it's
 // ready, so no screen mounts against an uninitialized/empty database.
-function DbGate({ children }: { children: React.ReactNode }) {
+function NativeDbGate({ children }: { children: React.ReactNode }) {
   const sqlite = useSQLiteContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setDb(sqlite);
-    // Initialize the instrumentation runtime before any screen mounts, so
-    // session/event calls (TodaySessionScreen et al.) don't throw on launch.
     const now = new Date().toISOString();
     const localDate = now.split('T')[0];
     initInstrumentationRuntime(now, localDate);
@@ -58,11 +64,78 @@ function DbGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Web-only initialization gate — loads the bundled DB via sql.js (async),
+// seeds the streak store, then holds rendering until ready (mirrors NativeDbGate).
+function seedWebStreak(): void {
+  const { computeLongest, computeStreak, useStreakStore } = require('./src/stores/streakStore');
+  const state = useStreakStore.getState();
+  if (Object.keys(state.activityDates).length > 0) return;
+  const localDate = (offset = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  };
+  const today = localDate();
+  const activityDates: Record<string, number> = {};
+  for (let offset = -4; offset <= 0; offset += 1) activityDates[localDate(offset)] = offset === 0 ? 2 : 1;
+  useStreakStore.setState({
+    activityDates,
+    currentStreak: computeStreak(activityDates, today),
+    longestStreak: computeLongest(activityDates),
+    graceTokens: 1,
+    lastActivityDate: today,
+    celebratedMilestones: [],
+  });
+}
+
+function WebDbGate({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const { initializeDatabase } = require('./src/data/database');
+    initializeDatabase()
+      .then(() => {
+        seedWebStreak();
+        const now = new Date().toISOString();
+        initInstrumentationRuntime(now, now.split('T')[0]);
+        if (mounted) setReady(true);
+      })
+      .catch((err: unknown) => {
+        if (mounted) setError(err instanceof Error ? err : new Error(String(err)));
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Text style={{ color: '#ef4444', fontSize: 15, textAlign: 'center' }}>Database error: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   if (Platform.OS === 'web') {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <AppContent />
+        <WebDbGate>
+          <AppContent />
+        </WebDbGate>
       </GestureHandlerRootView>
     );
   }
@@ -74,9 +147,9 @@ export default function App() {
         assetSource={{ assetId: require('./assets/db/kalima.db') }}
         options={{ enableChangeListener: true }}
       >
-        <DbGate>
+        <NativeDbGate>
           <AppContent />
-        </DbGate>
+        </NativeDbGate>
       </SQLiteProvider>
     </GestureHandlerRootView>
   );
