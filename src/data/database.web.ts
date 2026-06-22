@@ -54,36 +54,28 @@ function ensureUserTables(sqlite: SqlJsDatabase): void {
 
 function seedProgressTables(sqlite: SqlJsDatabase): void {
   const today = getLocalDate();
-  const yesterday = getLocalDate(-1);
-  const twoDaysAgo = getLocalDate(-2);
-  const fourDaysAgo = getLocalDate(-4);
-  const nextWeek = getLocalDate(7);
-  const nextMonth = getLocalDate(30);
+  // Realistic mid-journey state: the two highest-frequency levels (~100 words)
+  // mastered so the comprehension % is motivating and consistent with "2 levels
+  // done", a band of in-progress learning words, and a few brand-new — so the
+  // Today loop still has new + due items.
+  const rows: Array<[number, number, number, number, string, string | null, string]> = [];
+  for (let id = 1; id <= 100; id += 1) {
+    // 'review' is the status getQuranPercent counts as "understood" (occurrence-weighted).
+    rows.push([id, 2.7, 30 + (id % 30), 7, getLocalDate(20 + (id % 30)), getLocalDate(-((id % 14) + 1)), 'review']);
+  }
+  for (let id = 101; id <= 115; id += 1) {
+    rows.push([id, 2.5, (id % 6) + 1, 2, getLocalDate((id % 5) - 2), getLocalDate(-1), 'learning']);
+  }
+  for (let id = 116; id <= 125; id += 1) {
+    rows.push([id, 2.5, 0, 0, today, null, 'new']);
+  }
 
+  const placeholders = rows.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(',\n');
   sqlite.run(
-    `
-      INSERT OR IGNORE INTO word_progress (
+    `INSERT OR IGNORE INTO word_progress (
         word_id, ease_factor, interval, repetitions, due_date, last_reviewed, status
-      ) VALUES
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?)
-    `,
-    [
-      1, 2.5, 0, 0, today, null, 'new',
-      2, 2.55, 1, 1, today, yesterday, 'learning',
-      3, 2.6, 3, 2, yesterday, twoDaysAgo, 'learning',
-      4, 2.7, 7, 3, nextWeek, fourDaysAgo, 'learning',
-      5, 2.85, 21, 6, nextMonth, getLocalDate(-21), 'known',
-      6, 2.9, 30, 8, nextMonth, getLocalDate(-30), 'known',
-      7, 2.5, 0, 0, today, null, 'new',
-      8, 2.55, 2, 1, today, yesterday, 'learning',
-    ],
+      ) VALUES ${placeholders}`,
+    rows.flat(),
   );
 
   sqlite.run(
@@ -93,12 +85,14 @@ function seedProgressTables(sqlite: SqlJsDatabase): void {
       ) VALUES
         (?, ?, ?, ?),
         (?, ?, ?, ?),
+        (?, ?, ?, ?),
         (?, ?, ?, ?)
     `,
     [
-      1, 1, 0.95, getLocalDate(-10),
-      2, 1, 0.62, null,
-      3, 0, null, null,
+      1, 1, 0.95, getLocalDate(-12),
+      2, 1, 0.88, getLocalDate(-5),
+      3, 1, 0.6, null,
+      4, 0, null, null,
     ],
   );
 }

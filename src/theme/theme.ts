@@ -90,12 +90,12 @@ export const mushafTheme: ThemeTokens = {
     textPrimary: '#241f17',
     textSecondary: '#5c5548',
     textMuted: '#8b8170',
-    onAction: '#fdfaf1',
+    onAction: '#241f17',
     onSacred: '#211805',
   },
   action: {
-    action: '#218c4b',
-    actionPressed: '#176f3a',
+    action: '#c08a1e',
+    actionPressed: '#a5751a',
     actionDisabled: '#c9bea7',
   },
   learningState: {

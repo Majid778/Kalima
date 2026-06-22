@@ -29,10 +29,21 @@
 - **Cycle 1 (web-enablement, codex-implementer):** added web-only mock data layer + 5 web shim files; export 0 / tsc 0 / jest 214 ALL passed. BUT runtime-broken.
 - **Cycle 1 VERIFY (Opus, Playwright on the real export):** app RENDERS — 0 white-screen, onboarding 3-step flow works (intro → support → Arabic-level pick), all 7 tabs present (Today/Journey/Learn/Practice/Quiz/Profile), Profile shows reciter picker + Export/Restore, skeleton-loaders present (v2 design real). **BUG FOUND that gates missed:** 5× `select(...).from is not a function` → mock `db.select()` is async + `.from()` ignores table data + no `.get()/.all()`/writes → seed data never reaches screens (Journey/Today/Learn show empty/skeleton). Screenshots in job tmp `shots/`.
 
-## Open
-- **Cycle 1b (dispatched): real web data via sql.js + drizzle-orm/sql-js** loading bundled `assets/db/kalima.db`, create+seed runtime progress tables. Gate now includes a HEADLESS RUNTIME self-test (not just export). [codex-implementer afd1af369ee7aae24]
-- Deploy preview to Vercel (after it renders WITH data) — GATE: confirm with Boss before first public deploy.
-- Frontend polish cycles to Quality Bar.
+## Open (CYCLE 1 COMPLETE — preview is LIVE)
+- ✅ **Cycle 1b DONE: real web data via sql.js** loads bundled kalima.db; all Drizzle queries (joins/groupBy/count) run real. Self-test: words=1500, leftJoin=4500, practiceStats groupBy works.
+- ✅ **Fixed the runtime crash** (`e.exec is not a function`): App.tsx `WebDbGate` was still calling `setDb({})` from cycle 1 — rewired to await async `initializeDatabase()` + seed streak. Declared `sql.js@1.14.1` as explicit dep (was only transitive). Committed `f6247fa`.
+- ✅ **DEPLOYED to Vercel (prod, public): https://kalima-web-preview.vercel.app** — verified live render, 0 console errors, sql.js loads db over HTTPS.
+- ✅ Full-surface gallery captured (job tmp shots/): onboarding first-win, Today (25-item session, semantic pills), Journey (gold 0% hero + verse card), Learn (level grid), Profile (reciter picker + export/restore). All 0 errors.
+
+## NEXT: frontend polish cycles to Quality Bar (the "especially the frontend" ask)
+Polish targets spotted (ranked):
+1. **Hero metric reads 0%** — only 6/1500 words "known" → rounds to 0%. Seed more `known` progress so the comprehension % shows a motivating non-zero number (it's THE hero metric).
+2. **Green primary buttons** (Onboarding "Begin", Today "Start Session", Journey "Practice 5 due") = v1 single-accent the UX research flagged → warm toward gold for sacred/primary hierarchy.
+3. Audit dark+light parity (mushaf theme), motion (Reanimated worklets don't run on web — note: web can't fully verify 60fps/haptics; those stay a device check).
+4. Capture the Today SESSION card (reveal + grade) + Quiz + Reader — not yet screenshotted.
+
+## Re-deploy command (static export → prod)
+`cd /Users/majidibrahim/Documents/GitHub/Kalima && npx expo export -p web --output-dir /tmp/kw && rm -rf /tmp/kalima-web-preview && cp -R /tmp/kw /tmp/kalima-web-preview && cd /tmp/kalima-web-preview && vercel deploy --prod --yes`
 
 ## Polish targets already spotted (for later cycles)
 - Onboarding primary button is the v1 single GREEN accent on near-black — UX research flagged exactly this; warm toward gold + add hierarchy.

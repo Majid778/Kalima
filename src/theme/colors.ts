@@ -1,14 +1,14 @@
 export const colors = {
-  primary: '#4ade80',        // Green accent
-  primaryDark: '#22c55e',
-  background: '#0a0a0a',     // Near-black
-  surface: '#1a1a1a',        // Card backgrounds
-  surfaceLight: '#2a2a2a',   // Elevated surfaces
+  primary: '#e3b24a',        // Manuscript gold — primary/sacred action accent
+  primaryDark: '#c8973a',
+  background: '#0b0a07',     // Deep warm ink (was pure near-black)
+  surface: '#19160f',        // Card backgrounds (warm charcoal)
+  surfaceLight: '#262117',   // Elevated surfaces
   text: '#FFFFFF',
-  textSecondary: '#a1a1aa',
-  textMuted: '#71717a',
-  border: '#27272a',
+  textSecondary: '#a8a195',
+  textMuted: '#7a7468',
+  border: '#2b2620',
   error: '#ef4444',
-  success: '#4ade80',
+  success: '#4ade80',        // Green — reserved for success / mastery / correct
   warning: '#f59e0b',
 } as const;

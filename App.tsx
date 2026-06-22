@@ -84,7 +84,9 @@ function seedWebStreak(): void {
     longestStreak: computeLongest(activityDates),
     graceTokens: 1,
     lastActivityDate: today,
-    celebratedMilestones: [],
+    // Pre-mark milestones at/below the seeded comprehension % so the reverent
+    // MilestoneMoment doesn't auto-fire on every preview load.
+    celebratedMilestones: [0.25, 0.5],
   });
 }
 
