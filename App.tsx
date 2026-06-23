@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Font from 'expo-font';
 import { colors } from './src/theme/colors';
 import { RootStackNavigator } from './src/navigation/RootStackNavigator';
 import { setDb } from './src/data/database';
@@ -136,28 +137,82 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Font loading gate
+function FontGate({ children }: { children: React.ReactNode }) {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadFonts = async () => {
+      try {
+        await Font.loadAsync({
+          PlusJakartaSans_400Regular: require('@expo-google-fonts/plus-jakarta-sans').PlusJakartaSans_400Regular,
+          PlusJakartaSans_500Medium: require('@expo-google-fonts/plus-jakarta-sans').PlusJakartaSans_500Medium,
+          PlusJakartaSans_600SemiBold: require('@expo-google-fonts/plus-jakarta-sans').PlusJakartaSans_600SemiBold,
+          PlusJakartaSans_700Bold: require('@expo-google-fonts/plus-jakarta-sans').PlusJakartaSans_700Bold,
+          PlusJakartaSans_800ExtraBold: require('@expo-google-fonts/plus-jakarta-sans').PlusJakartaSans_800ExtraBold,
+          NotoNaskhArabic_400Regular: require('@expo-google-fonts/noto-naskh-arabic').NotoNaskhArabic_400Regular,
+          NotoNaskhArabic_700Bold: require('@expo-google-fonts/noto-naskh-arabic').NotoNaskhArabic_700Bold,
+        });
+        if (mounted) setFontsLoaded(true);
+      } catch (err) {
+        if (mounted) setError(err instanceof Error ? err : new Error(String(err)));
+      }
+    };
+
+    loadFonts();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Text style={{ color: '#ef4444', fontSize: 15, textAlign: 'center' }}>Font loading error: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   if (Platform.OS === 'web') {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <WebDbGate>
-          <AppContent />
-        </WebDbGate>
+        <FontGate>
+          <WebDbGate>
+            <AppContent />
+          </WebDbGate>
+        </FontGate>
       </GestureHandlerRootView>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SQLiteProvider
-        databaseName="kalima.db"
-        assetSource={{ assetId: require('./assets/db/kalima.db') }}
-        options={{ enableChangeListener: true }}
-      >
-        <NativeDbGate>
-          <AppContent />
-        </NativeDbGate>
-      </SQLiteProvider>
+      <FontGate>
+        <SQLiteProvider
+          databaseName="kalima.db"
+          assetSource={{ assetId: require('./assets/db/kalima.db') }}
+          options={{ enableChangeListener: true }}
+        >
+          <NativeDbGate>
+            <AppContent />
+          </NativeDbGate>
+        </SQLiteProvider>
+      </FontGate>
     </GestureHandlerRootView>
   );
 }

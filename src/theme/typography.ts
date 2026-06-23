@@ -1,13 +1,22 @@
 import { Platform } from 'react-native';
 
-export const serifFamily = Platform.select({
-  ios: 'Georgia',
-  android: 'serif',
-  default: 'Georgia, "Times New Roman", serif',
-});
+export const display = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
+} as const;
+
+export const naskh = {
+  regular: 'NotoNaskhArabic_400Regular',
+  bold: 'NotoNaskhArabic_700Bold',
+} as const;
+
+export const serifFamily = display.bold;
 
 export const fonts = {
-  arabic: 'KFGQPC-Uthmanic-Script-HAFS',  // D-03
+  arabic: 'KFGQPC-Uthmanic-Script-HAFS',
 } as const;
 
 export const typeScale = {

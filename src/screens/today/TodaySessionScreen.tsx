@@ -1,5 +1,5 @@
 // src/screens/today/TodaySessionScreen.tsx
-// Main practice session for Today: card reveal, grading, mistake recovery
+// Main reading session for Today: reveal, grading, audio, and mistake recovery
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
@@ -10,10 +10,14 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  Platform,
+  SafeAreaView,
+  type ViewStyle,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -30,18 +34,17 @@ import { getDueCards, gradeCard, getProgressWordIds, getLearnedWordStatuses } fr
 import { getWordsForLevel } from '../../services/wordService';
 import { getLocalToday } from '../../services/sm2';
 import { buildTodaySession, SessionSequence, SessionItem, reinsertAtEnd } from '../../services/sessionService';
-import { previewGrades, Grade, type SM2State } from '../../services/sm2';
-import { getWordStrength, type WordStrength } from '../../services/wordStrengthService';
+import { Grade, type SM2State } from '../../services/sm2';
+import type { WordStrength } from '../../services/wordStrengthService';
 import { buildKnownWordMap } from '../../services/arabicNormalize';
-import { WordCard } from '../../components/WordCard';
-import { GradeButtons } from '../../components/GradeButtons';
-import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { swipeDirectionToGrade } from '../../components/today/swipeGrade';
 import { ayahAudioUrl, getReciterById } from '../../services/audio/audioSource';
 import { playAyah, stopAudio } from '../../services/audio/audioRuntime';
-import type { ThemeTokens } from '../../theme/theme';
-import { serifFamily } from '../../theme/typography';
-import { useTheme } from '../../theme/useTheme';
+import { AppIcon } from '../../components/AppIcon';
+import { Chip } from '../../components/Chip';
+import { ArabicText } from '../../components/ArabicText';
+import { mushafPalette } from '../../theme/palette';
+import { display, naskh } from '../../theme/typography';
 import { useSettingsStore } from '../../stores/settingsStore';
 import {
   recordEvent,
@@ -52,6 +55,8 @@ import {
 } from '../../services/instrumentationRuntime';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
+type SessionWord = SessionItem['word'];
+type SessionVerse = SessionWord['verses'][number];
 
 const SESSION_CONFIG = {
   dailyNewTarget: 10,
@@ -66,12 +71,133 @@ const SPRING_CONFIG = {
   stiffness: 210,
   mass: 0.85,
 };
-const getHints = (theme: ThemeTokens): { grade: Grade; label: string; color: string }[] => [
-  { grade: 'again', label: 'Again', color: theme.feedback.error },
-  { grade: 'hard', label: 'Hard', color: theme.feedback.warning },
-  { grade: 'good', label: 'Good', color: theme.action.action },
-  { grade: 'easy', label: 'Easy', color: theme.learningState.due },
-];
+
+const SESSION_LIGHT = '#e9dcb6';
+const SESSION_DARK = '#241a0d';
+const SESSION_BG = '#221809';
+const SESSION_RADIAL_STYLE = Platform.select({
+  web: {
+    backgroundImage: 'radial-gradient(135% 80% at 50% 0%, #3a2a12, #221809)',
+  } as ViewStyle,
+  default: null,
+});
+
+const SURAH_NAMES: Record<number, string> = {
+  1: 'Al-Fatihah',
+  2: 'Al-Baqarah',
+  3: 'Ali Imran',
+  4: 'An-Nisa',
+  5: "Al-Ma'idah",
+  6: "Al-An'am",
+  7: "Al-A'raf",
+  8: 'Al-Anfal',
+  9: 'At-Tawbah',
+  10: 'Yunus',
+  11: 'Hud',
+  12: 'Yusuf',
+  13: "Ar-Ra'd",
+  14: 'Ibrahim',
+  15: 'Al-Hijr',
+  16: 'An-Nahl',
+  17: 'Al-Isra',
+  18: 'Al-Kahf',
+  19: 'Maryam',
+  20: 'Taha',
+  21: 'Al-Anbiya',
+  22: 'Al-Hajj',
+  23: "Al-Mu'minun",
+  24: 'An-Nur',
+  25: 'Al-Furqan',
+  26: "Ash-Shu'ara",
+  27: 'An-Naml',
+  28: 'Al-Qasas',
+  29: 'Al-Ankabut',
+  30: 'Ar-Rum',
+  31: 'Luqman',
+  32: 'As-Sajdah',
+  33: 'Al-Ahzab',
+  34: 'Saba',
+  35: 'Fatir',
+  36: 'Ya-Sin',
+  37: 'As-Saffat',
+  38: 'Sad',
+  39: 'Az-Zumar',
+  40: 'Ghafir',
+  41: 'Fussilat',
+  42: 'Ash-Shura',
+  43: 'Az-Zukhruf',
+  44: 'Ad-Dukhan',
+  45: 'Al-Jathiyah',
+  46: 'Al-Ahqaf',
+  47: 'Muhammad',
+  48: 'Al-Fath',
+  49: 'Al-Hujurat',
+  50: 'Qaf',
+  51: 'Adh-Dhariyat',
+  52: 'At-Tur',
+  53: 'An-Najm',
+  54: 'Al-Qamar',
+  55: 'Ar-Rahman',
+  56: "Al-Waqi'ah",
+  57: 'Al-Hadid',
+  58: 'Al-Mujadilah',
+  59: 'Al-Hashr',
+  60: 'Al-Mumtahanah',
+  61: 'As-Saff',
+  62: "Al-Jumu'ah",
+  63: 'Al-Munafiqun',
+  64: 'At-Taghabun',
+  65: 'At-Talaq',
+  66: 'At-Tahrim',
+  67: 'Al-Mulk',
+  68: 'Al-Qalam',
+  69: 'Al-Haqqah',
+  70: "Al-Ma'arij",
+  71: 'Nuh',
+  72: 'Al-Jinn',
+  73: 'Al-Muzzammil',
+  74: 'Al-Muddaththir',
+  75: 'Al-Qiyamah',
+  76: 'Al-Insan',
+  77: 'Al-Mursalat',
+  78: 'An-Naba',
+  79: "An-Nazi'at",
+  80: 'Abasa',
+  81: 'At-Takwir',
+  82: 'Al-Infitar',
+  83: 'Al-Mutaffifin',
+  84: 'Al-Inshiqaq',
+  85: 'Al-Buruj',
+  86: 'At-Tariq',
+  87: "Al-A'la",
+  88: 'Al-Ghashiyah',
+  89: 'Al-Fajr',
+  90: 'Al-Balad',
+  91: 'Ash-Shams',
+  92: 'Al-Layl',
+  93: 'Ad-Duha',
+  94: 'Ash-Sharh',
+  95: 'At-Tin',
+  96: 'Al-Alaq',
+  97: 'Al-Qadr',
+  98: 'Al-Bayyinah',
+  99: 'Az-Zalzalah',
+  100: 'Al-Adiyat',
+  101: "Al-Qari'ah",
+  102: 'At-Takathur',
+  103: 'Al-Asr',
+  104: 'Al-Humazah',
+  105: 'Al-Fil',
+  106: 'Quraysh',
+  107: "Al-Ma'un",
+  108: 'Al-Kawthar',
+  109: 'Al-Kafirun',
+  110: 'An-Nasr',
+  111: 'Al-Masad',
+  112: 'Al-Ikhlas',
+  113: 'Al-Falaq',
+  114: 'An-Nas',
+};
 
 interface SessionState {
   sequence: SessionSequence;
@@ -82,9 +208,14 @@ interface SessionState {
   completed: boolean;
 }
 
+function formatVerseRef(verse?: SessionVerse): string {
+  if (!verse) return 'Verse context';
+  const surahName = SURAH_NAMES[verse.surahNumber] ?? `Surah ${verse.surahNumber}`;
+  return `${surahName} · ${verse.surahNumber}:${verse.ayahNumber}`;
+}
+
 function LoadingSkeleton() {
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const styles = useMemo(() => makeStyles(), []);
   const reduceMotion = useReducedMotion();
   const shimmer = useSharedValue(0);
 
@@ -98,39 +229,36 @@ function LoadingSkeleton() {
   }, [reduceMotion, shimmer]);
 
   const shimmerStyle = useAnimatedStyle(() => ({
-    opacity: reduceMotion ? 0 : 1,
-    transform: [{ translateX: -180 + shimmer.value * 420 }],
+    opacity: reduceMotion ? 0.35 : 0.2 + shimmer.value * 0.32,
   }));
 
   return (
-    <View style={styles.skeletonContainer} accessibilityLabel="Loading today's session">
-      <View style={styles.skeletonHeader}>
-        <View style={styles.skeletonLineShort} />
-        <View style={styles.skeletonBadge} />
+    <SafeAreaView style={[styles.safeArea, SESSION_RADIAL_STYLE]}>
+      <View style={[styles.container, styles.loadingContainer]}>
+        <View style={styles.skeletonHeader}>
+          <View style={styles.skeletonIcon} />
+          <View style={styles.skeletonBadge} />
+          <View style={styles.skeletonIcon} />
+        </View>
+        <View style={styles.skeletonProgress} />
+        <View style={styles.skeletonCard}>
+          <Animated.View style={[styles.skeletonShimmer, shimmerStyle]} />
+          <View style={styles.skeletonArabicLine} />
+          <View style={styles.skeletonLine} />
+          <View style={styles.skeletonLineNarrow} />
+        </View>
       </View>
-      <View style={styles.skeletonCard}>
-        <Animated.View style={[styles.skeletonShimmer, shimmerStyle]} />
-        <View style={styles.skeletonArabicLine} />
-        <View style={styles.skeletonLine} />
-        <View style={styles.skeletonLineNarrow} />
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 export function TodaySessionScreen() {
   const navigation = useNavigation<NavProp>();
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const hints = useMemo(() => getHints(theme), [theme]);
+  const styles = useMemo(() => makeStyles(), []);
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudio);
   const reciterId = useSettingsStore((s) => s.reciterId);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
-  // Known-word map for in-āyah status coloring (P2); optional — WordCard degrades
-  // to target-only coloring when absent.
-  const [knownMap, setKnownMap] = useState<Map<string, WordStrength>>();
-  // Refs are read synchronously at callback/cleanup time, immune to stale closures:
-  // completedRef gates the abandon-on-blur cleanup; gradingRef blocks re-entrant taps.
+  const [, setKnownMap] = useState<Map<string, WordStrength>>();
   const completedRef = useRef(false);
   const gradingRef = useRef(false);
   const reduceMotion = useReducedMotion();
@@ -142,7 +270,6 @@ export function TodaySessionScreen() {
   const currentTotalCount = sessionState?.sequence.totalCount;
   const isRevealed = sessionState?.revealed ?? false;
 
-  // Initialize session on mount
   useEffect(() => {
     const initSession = async () => {
       try {
@@ -154,8 +281,6 @@ export function TodaySessionScreen() {
           getLearnedWordStatuses(db),
         ]);
 
-        // "New" = level words not yet in the SR queue, so a word can never be
-        // both a new card and a due review in the same session.
         const inProgress = new Set(progressIds);
         const availableNew = levelWords.filter(w => !inProgress.has(w.id));
 
@@ -170,8 +295,6 @@ export function TodaySessionScreen() {
           seq.totalCount = seq.items.length;
         }
 
-        // Nothing to study (e.g. due cleared since Home) — return to the
-        // "all caught up" home rather than starting an empty session.
         if (seq.totalCount === 0) {
           navigation.goBack();
           return;
@@ -187,8 +310,6 @@ export function TodaySessionScreen() {
         });
         setKnownMap(buildKnownWordMap(learnedStatuses));
 
-        // Open an instrumentation session (populates sessionSummaries for
-        // completion-rate + drop-off) and record the start event (funnel + milestone).
         startSession('TodaySession', seq.reviewCount);
         recordEvent('practice_session_started', {
           totalItems: seq.totalCount,
@@ -203,12 +324,12 @@ export function TodaySessionScreen() {
     };
 
     initSession();
-  }, []);
+  }, [navigation, setKnownMap]);
 
-  // Handle unmount: record session abandon if not completed
   useFocusEffect(
     useCallback(() => {
       return () => {
+        stopAudio();
         if (
           sessionState &&
           !completedRef.current &&
@@ -247,26 +368,24 @@ export function TodaySessionScreen() {
       : withSpring(nextValue, SPRING_CONFIG);
   }, [currentItemIndex, isRevealed, reduceMotion, revealProgress]);
 
-  useEffect(() => {
-    if (!sessionState?.revealed || !autoPlayAudio) return;
-
+  const playCurrentAyah = useCallback(() => {
+    if (!sessionState) return;
     const item = sessionState.sequence.items[sessionState.currentIndex];
     const verse = item?.word.verses[0];
     if (!verse) return;
 
     const reciter = getReciterById(reciterId);
     playAyah(ayahAudioUrl(reciter, verse.surahNumber, verse.ayahNumber));
+  }, [reciterId, sessionState]);
+
+  useEffect(() => {
+    if (!sessionState?.revealed || !autoPlayAudio) return;
+    playCurrentAyah();
 
     return () => {
       stopAudio();
     };
-  }, [
-    autoPlayAudio,
-    reciterId,
-    sessionState?.currentIndex,
-    sessionState?.revealed,
-    sessionState?.sequence.items,
-  ]);
+  }, [autoPlayAudio, playCurrentAyah, sessionState?.revealed]);
 
   const handleCardReveal = useCallback(() => {
     setSessionState(prev => {
@@ -285,9 +404,6 @@ export function TodaySessionScreen() {
     handleCardReveal();
   }, [handleCardReveal, sessionState]);
 
-  // Close the session exactly once. Side-effects live OUTSIDE any state updater so
-  // they never double-fire, and completedRef flips synchronously BEFORE navigating
-  // (the blur cleanup reads the ref, so a completed session is never marked abandoned).
   const finishSession = useCallback(
     (seq: SessionSequence) => {
       if (completedRef.current) return;
@@ -295,7 +411,7 @@ export function TodaySessionScreen() {
       completeSession('TodayResult');
       recordEvent('practice_session_completed', { totalItems: seq.totalCount });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate('TodayResult');
+      navigation.navigate('TodayResult', { sessionWordsShown: seq.totalCount });
     },
     [navigation],
   );
@@ -310,8 +426,6 @@ export function TodaySessionScreen() {
 
   const handleGrade = useCallback(
     async (grade: Grade) => {
-      // gradingRef blocks re-entrant taps while the async grade is in flight,
-      // preventing double-grading and duplicate completion events.
       if (!sessionState || gradingRef.current) return;
       const cur = sessionState;
       const item = cur.sequence.items[cur.currentIndex];
@@ -319,11 +433,6 @@ export function TodaySessionScreen() {
       gradingRef.current = true;
 
       try {
-        // Persist SR state ONLY on a card's first presentation (reviewCount 0).
-        // Retry copies (reviewCount > 0) are in-session reinforcement: re-writing
-        // SM-2 would overwrite the lapse penalty from the original 'again' and could
-        // push cardsReviewed past cardsInitial. 'new' words are introduced on grade;
-        // 'review' words are updated; 'check' items are ungraded recalls.
         const isFirstPresentation = item.reviewCount === 0;
         if (isFirstPresentation && (item.type === 'new' || item.type === 'review')) {
           recordEvent('practice_card_graded', { wordId: item.wordId, grade, itemType: item.type });
@@ -346,14 +455,11 @@ export function TodaySessionScreen() {
           }
         }
 
-        // Wrong answer: show the teaching modal; the grade (if first) is already saved.
-        // Keep gradingRef held until the modal is resolved (retry/close).
         if (grade === 'again') {
           setSessionState(prev => (prev ? { ...prev, mistakeModalVisible: true } : null));
           return;
         }
 
-        // Correct: finish if this was the last item, else advance.
         if (cur.currentIndex + 1 >= cur.sequence.totalCount) {
           finishSession(cur.sequence);
           setSessionState(prev => (prev ? { ...prev, completed: true } : null));
@@ -376,13 +482,10 @@ export function TodaySessionScreen() {
     const item = cur.sequence.items[cur.currentIndex];
     if (!item) return;
 
-    // Re-queue at the end, bounded by the retry cap. reinsertAtEnd DROPS the item
-    // (unchanged length) once the cap is exhausted, so the session still terminates.
     const newSeq = reinsertAtEnd(cur.sequence, item, 2);
     const nextIndex = cur.currentIndex + 1;
 
     if (nextIndex >= newSeq.totalCount) {
-      // Last item (or dropped at the cap) — finish; never index past the end.
       finishSession(newSeq);
       setSessionState(prev =>
         prev ? { ...prev, sequence: newSeq, mistakeModalVisible: false, completed: true } : prev,
@@ -398,7 +501,9 @@ export function TodaySessionScreen() {
 
   const handleSwipeGrade = useCallback(
     (grade: Grade) => {
-      handleGrade(grade);
+      if (grade === 'again' || grade === 'good') {
+        handleGrade(grade);
+      }
     },
     [handleGrade],
   );
@@ -414,7 +519,7 @@ export function TodaySessionScreen() {
       if (swipeCommitted.value) return;
 
       const grade = swipeDirectionToGrade(event.translationX, event.translationY, SWIPE_THRESHOLD);
-      if (!grade) {
+      if (!grade || (grade !== 'again' && grade !== 'good')) {
         translateX.value = reduceMotion ? 0 : withSpring(0, SPRING_CONFIG);
         translateY.value = reduceMotion ? 0 : withSpring(0, SPRING_CONFIG);
         return;
@@ -429,26 +534,15 @@ export function TodaySessionScreen() {
         return;
       }
 
-      const horizontal = Math.abs(event.translationX) > Math.abs(event.translationY);
-      const offscreenX = horizontal
-        ? (event.translationX > 0 ? OFFSCREEN_DISTANCE : -OFFSCREEN_DISTANCE)
-        : event.translationX;
-      const offscreenY = horizontal
-        ? event.translationY
-        : (event.translationY > 0 ? OFFSCREEN_DISTANCE : -OFFSCREEN_DISTANCE);
+      const offscreenX = event.translationX > 0 ? OFFSCREEN_DISTANCE : -OFFSCREEN_DISTANCE;
       const onFinished = (finished?: boolean) => {
         if (finished) {
           runOnJS(handleSwipeGrade)(grade);
         }
       };
 
-      if (horizontal) {
-        translateY.value = withSpring(offscreenY, SPRING_CONFIG);
-        translateX.value = withSpring(offscreenX, SPRING_CONFIG, onFinished);
-      } else {
-        translateX.value = withSpring(offscreenX, SPRING_CONFIG);
-        translateY.value = withSpring(offscreenY, SPRING_CONFIG, onFinished);
-      }
+      translateY.value = withSpring(event.translationY, SPRING_CONFIG);
+      translateX.value = withSpring(offscreenX, SPRING_CONFIG, onFinished);
     });
 
   const swipeCardStyle = useAnimatedStyle(() => {
@@ -479,382 +573,234 @@ export function TodaySessionScreen() {
     ],
   }));
 
-  const againHintStyle = useAnimatedStyle(() => ({
-    opacity: swipeDirectionToGrade(translateX.value, translateY.value, SWIPE_THRESHOLD) === 'again' ? 1 : 0,
-    transform: [{ translateX: -8 }],
-  }));
-
-  const hardHintStyle = useAnimatedStyle(() => ({
-    opacity: swipeDirectionToGrade(translateX.value, translateY.value, SWIPE_THRESHOLD) === 'hard' ? 1 : 0,
-    transform: [{ translateY: 8 }],
-  }));
-
-  const goodHintStyle = useAnimatedStyle(() => ({
-    opacity: swipeDirectionToGrade(translateX.value, translateY.value, SWIPE_THRESHOLD) === 'good' ? 1 : 0,
-    transform: [{ translateX: 8 }],
-  }));
-
-  const easyHintStyle = useAnimatedStyle(() => ({
-    opacity: swipeDirectionToGrade(translateX.value, translateY.value, SWIPE_THRESHOLD) === 'easy' ? 1 : 0,
-    transform: [{ translateY: -8 }],
-  }));
-
   if (!sessionState) {
-    return (
-      <View style={styles.container}>
-        <LoadingSkeleton />
-      </View>
-    );
+    return <LoadingSkeleton />;
   }
 
   const item = sessionState.sequence.items[sessionState.currentIndex];
   if (!item) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={styles.completionText}>
-          You're all done for now.
-        </Text>
-        <Pressable
-          style={[styles.revealButton, { alignSelf: 'stretch' }]}
-          onPress={() => navigation.navigate('Tabs')}
-        >
-          <Text style={styles.revealButtonText}>Continue</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView style={[styles.safeArea, SESSION_RADIAL_STYLE]}>
+        <View style={[styles.centeredState, SESSION_RADIAL_STYLE]}>
+          <Text style={styles.completionText}>You are all done for now.</Text>
+          <Pressable style={styles.revealButton} onPress={() => navigation.navigate('Tabs')}>
+            <Text style={styles.revealButtonText}>Continue</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // Get strength from SM2 state if available, else 'new'
-  const strength = item.sm2 
-    ? getWordStrength({
-        status: item.sm2.status as 'new' | 'learning' | 'review',
-        interval: item.sm2.interval,
-        repetitions: item.sm2.repetitions,
-      })
-    : 'new';
+  const verse = item.word.verses[0];
+  const currentIndex = sessionState.currentIndex + 1;
+  const totalItems = sessionState.sequence.totalCount;
+  const progressPercent = totalItems > 0 ? (currentIndex / totalItems) * 100 : 0;
+  const verseRef = formatVerseRef(verse);
+  const ayahText = verse?.arabicText ?? item.word.arabic;
+  const translation = verse?.translation ?? '';
+  const meaning = item.word.meaning;
 
-  const defaultSM2: SM2State = { easeFactor: 2.5, interval: 0, repetitions: 0, status: 'new' };
-  const smState: SM2State = item.sm2 
-    ? {
-        easeFactor: item.sm2.easeFactor,
-        interval: item.sm2.interval,
-        repetitions: item.sm2.repetitions,
-        status: item.sm2.status as 'new' | 'learning' | 'review',
-      }
-    : defaultSM2;
-  const intervals = previewGrades(smState);
+  const cardContent = (revealed: boolean) => (
+    <View style={styles.floatingCard}>
+      <View style={styles.cardHeaderRow}>
+        <Pressable
+          onPress={playCurrentAyah}
+          style={styles.cardIconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Play ayah audio"
+        >
+          <AppIcon name="speaker" size={20} color={mushafPalette.muted} />
+        </Pressable>
+        <Text style={styles.surahRef} numberOfLines={1}>{verseRef}</Text>
+        <View style={styles.cardIconButton}>
+          <AppIcon name="heart" size={20} color={mushafPalette.muted} />
+        </View>
+      </View>
 
-  const progress = `${sessionState.currentIndex + 1} / ${sessionState.sequence.totalCount}`;
-  const remainingItems = Math.max(0, sessionState.sequence.totalCount - sessionState.currentIndex - 1);
-  const pileCount = Math.min(3, remainingItems);
-  const hintStyles: Record<Grade, object> = {
-    again: againHintStyle,
-    hard: hardHintStyle,
-    good: goodHintStyle,
-    easy: easyHintStyle,
-  };
-  const hintPositionStyles: Record<Grade, object> = {
-    again: styles.swipeHintAgain,
-    hard: styles.swipeHintHard,
-    good: styles.swipeHintGood,
-    easy: styles.swipeHintEasy,
-  };
+      <ArabicText style={styles.ayahText} color={mushafPalette.ink}>
+        {ayahText}
+      </ArabicText>
+
+      {translation.length > 0 && (
+        <Text style={styles.translationText}>{translation}</Text>
+      )}
+
+      <View style={styles.divider} />
+
+      <View style={styles.learningSection}>
+        <Text style={styles.eyebrow}>{"the word you're learning"}</Text>
+        <ArabicText style={styles.targetWord} color={mushafPalette.goldDeep}>
+          {item.word.arabic}
+        </ArabicText>
+        <Text style={styles.meaningText}>
+          {revealed ? meaning : 'Hidden'}
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      {/* Header with progress */}
-      <View style={styles.header}>
-        <Text style={styles.progress}>{progress}</Text>
-        <WordStrengthBadge strength={strength} />
-      </View>
+    <SafeAreaView style={[styles.safeArea, SESSION_RADIAL_STYLE]}>
+      <View style={[styles.container, SESSION_RADIAL_STYLE]}>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.topIconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <AppIcon name="chevron-left" size={22} color={SESSION_LIGHT} />
+          </Pressable>
 
-      {/* Word card */}
-      <View style={styles.cardContainer}>
-        {Array.from({ length: pileCount }).map((_, index) => (
-          <View
-            key={`pile-${index}`}
-            style={[
-              styles.pileCard,
-              {
-                opacity: 0.22 - index * 0.045,
-                transform: [
-                  { translateY: 10 + index * 9 },
-                  { scale: 0.972 - index * 0.018 },
-                ],
-              },
-            ]}
-          />
-        ))}
+          <Chip label={`${currentIndex} of ${totalItems}`} dark />
 
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.activeCard, swipeCardStyle]}>
-            {sessionState.revealed && (
-              <View pointerEvents="none" style={styles.hintLayer}>
-                {hints.map(({ grade, label, color }) => (
-                  <Animated.View
-                    key={grade}
-                    style={[
-                      styles.swipeHint,
-                      hintPositionStyles[grade],
-                      { borderColor: color, backgroundColor: theme.surfaces.surfaceElevated },
-                      hintStyles[grade],
-                    ]}
-                  >
-                    <Text style={[styles.swipeHintLabel, { color }]}>{label}</Text>
-                    <Text style={styles.swipeHintInterval}>{intervals[grade]}</Text>
-                  </Animated.View>
-                ))}
-              </View>
-            )}
-
-            <Animated.View
-              pointerEvents={sessionState.revealed ? 'none' : 'auto'}
-              style={[styles.cardFace, frontFaceStyle]}
-            >
-              {/* Front (pre-reveal) = recall view: Arabic + context āyāt, meaning hidden. */}
-              <WordCard word={item.word} showFront={false} knownMap={knownMap} />
-            </Animated.View>
-
-            <Animated.View
-              pointerEvents={sessionState.revealed ? 'auto' : 'none'}
-              style={[styles.cardFace, revealedFaceStyle]}
-            >
-              {/* Revealed = full card: meaning, transliteration, root, occurrences, āyāt. */}
-              <WordCard word={item.word} showFront knownMap={knownMap} />
-            </Animated.View>
-          </Animated.View>
-        </GestureDetector>
-      </View>
-
-      {/* Tap to reveal prompt or grade buttons */}
-      {!sessionState.revealed && (
-        <Pressable
-          style={styles.revealButton}
-          onPress={handleRevealPress}
-        >
-          <Text style={styles.revealButtonText}>Tap to reveal</Text>
-        </Pressable>
-      )}
-
-      {sessionState.revealed && (
-        <GradeButtons intervals={intervals} onGrade={handleGrade} />
-      )}
-
-      {/* Mistake recovery modal */}
-      <Modal
-        visible={sessionState.mistakeModalVisible}
-        transparent
-        onRequestClose={handleMistakeRetry}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Let's review</Text>
-            <ScrollView style={styles.reviewScroll}>
-              <Text style={styles.modalLabel}>Root:</Text>
-              <Text style={styles.reviewText}>{item.word.root || '—'}</Text>
-
-              {item.word.verses && item.word.verses.length > 0 && (
-                <>
-                  <Text style={styles.modalLabel}>Example Verse:</Text>
-                  <Text style={styles.arabicText}>{item.word.verses[0].arabicText}</Text>
-                  <Text style={styles.translationText}>{item.word.verses[0].translation}</Text>
-                </>
-              )}
-            </ScrollView>
-
-            <Pressable
-              style={styles.retryButton}
-              onPress={handleMistakeRetry}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </Pressable>
+          <View style={styles.topIconButton}>
+            <AppIcon name="dots" size={22} color={SESSION_LIGHT} />
           </View>
         </View>
-      </Modal>
-    </View>
+
+        <View style={styles.progressTrack}>
+          <LinearGradient
+            colors={['#dcb04a', '#e9d49a']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[styles.progressFill, { width: `${progressPercent}%` }]}
+          />
+        </View>
+
+        <View style={styles.cardStage}>
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={[styles.activeCard, swipeCardStyle]}>
+              <Animated.View
+                pointerEvents={sessionState.revealed ? 'none' : 'auto'}
+                style={[styles.cardFace, frontFaceStyle]}
+              >
+                <Pressable onPress={handleRevealPress} style={styles.cardPressable}>
+                  {cardContent(false)}
+                </Pressable>
+              </Animated.View>
+
+              <Animated.View
+                pointerEvents={sessionState.revealed ? 'auto' : 'none'}
+                style={[styles.cardFace, revealedFaceStyle]}
+              >
+                {cardContent(true)}
+              </Animated.View>
+            </Animated.View>
+          </GestureDetector>
+        </View>
+
+        {!sessionState.revealed ? (
+          <Pressable style={styles.revealButton} onPress={handleRevealPress}>
+            <Text style={styles.revealButtonText}>Reveal</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.buttonRow}>
+            <Pressable style={styles.againButton} onPress={() => handleGrade('again')}>
+              <Text style={styles.againButtonText}>Again</Text>
+            </Pressable>
+
+            <Pressable style={styles.knewItButtonOuter} onPress={() => handleGrade('good')}>
+              <LinearGradient
+                colors={['#e9cf83', '#c8973a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.knewItButton}
+              >
+                <Text style={styles.knewItButtonText}>I knew it</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        )}
+
+        <Modal
+          visible={sessionState.mistakeModalVisible}
+          transparent
+          onRequestClose={handleMistakeRetry}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Let us review</Text>
+              <ScrollView style={styles.reviewScroll}>
+                <Text style={styles.modalLabel}>Root:</Text>
+                <Text style={styles.reviewText}>{item.word.root || '-'}</Text>
+
+                {item.word.verses.length > 0 && (
+                  <>
+                    <Text style={styles.modalLabel}>Example Verse:</Text>
+                    <ArabicText style={styles.modalArabicText} color={mushafPalette.ink}>
+                      {item.word.verses[0].arabicText}
+                    </ArabicText>
+                    <Text style={styles.modalTranslationText}>
+                      {item.word.verses[0].translation}
+                    </Text>
+                  </>
+                )}
+              </ScrollView>
+
+              <Pressable style={styles.retryButton} onPress={handleMistakeRetry}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 
-const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: SESSION_BG,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.surfaces.background,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
+    backgroundColor: SESSION_BG,
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 28,
   },
-  header: {
+  loadingContainer: {
+    justifyContent: 'center',
+  },
+  centeredState: {
+    flex: 1,
+    backgroundColor: SESSION_BG,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
+    paddingBottom: 12,
   },
-  progress: {
-    fontSize: 14,
-    color: theme.text.textSecondary,
-    fontWeight: '500',
-  },
-  cardContainer: {
-    flex: 1,
+  topIconButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
-  revealButton: {
-    backgroundColor: theme.action.action,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  revealButtonText: {
-    color: theme.text.onAction,
-    fontFamily: serifFamily,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: theme.feedback.error,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  completionText: {
-    color: theme.text.textPrimary,
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: theme.surfaces.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: theme.surfaces.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: serifFamily,
-    fontWeight: 'bold',
-    color: theme.text.textPrimary,
-    marginBottom: 20,
-  },
-  modalLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: theme.text.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  reviewScroll: {
-    marginBottom: 16,
-  },
-  reviewText: {
-    fontSize: 16,
-    color: theme.text.textPrimary,
-    fontWeight: '500',
-    marginBottom: 12,
-  },
-  arabicText: {
-    fontSize: 20,
-    color: theme.text.textPrimary,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'right',
-  },
-  translationText: {
-    fontSize: 14,
-    color: theme.text.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  retryButton: {
-    backgroundColor: theme.action.action,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  retryButtonText: {
-    color: theme.text.onAction,
-    fontFamily: serifFamily,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  skeletonContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  skeletonHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 0,
-  },
-  skeletonLineShort: {
-    height: 14,
-    borderRadius: 6,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    width: 50,
-  },
-  skeletonBadge: {
-    width: 48,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: theme.surfaces.surfaceElevated,
-  },
-  skeletonCard: {
-    flex: 1,
-    backgroundColor: theme.surfaces.surface,
-    borderRadius: 12,
-    marginBottom: 24,
+  progressTrack: {
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,.12)',
+    borderRadius: 3,
     overflow: 'hidden',
   },
-  skeletonShimmer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: theme.surfaces.surfaceElevated,
+  progressFill: {
+    height: 5,
+    borderRadius: 3,
   },
-  skeletonArabicLine: {
-    height: 48,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    marginVertical: 16,
-    borderRadius: 6,
-  },
-  skeletonLine: {
-    height: 16,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    marginVertical: 8,
-    borderRadius: 6,
-  },
-  skeletonLineNarrow: {
-    height: 14,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    width: '70%',
-    marginVertical: 8,
-    borderRadius: 6,
-  },
-  pileCard: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: theme.surfaces.surface,
-    borderRadius: 12,
+  cardStage: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 24,
   },
   activeCard: {
-    flex: 1,
+    minHeight: 430,
+    justifyContent: 'center',
   },
   cardFace: {
     position: 'absolute',
@@ -862,50 +808,277 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    justifyContent: 'center',
   },
-  hintLayer: {
+  cardPressable: {
+    justifyContent: 'center',
+  },
+  floatingCard: {
+    backgroundColor: mushafPalette.paper,
+    borderRadius: 26,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 22 },
+    shadowOpacity: 0.4,
+    shadowRadius: 48,
+    elevation: 12,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  cardIconButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  surahRef: {
+    flex: 1,
+    color: mushafPalette.ink,
+    fontFamily: display.semibold,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  ayahText: {
+    color: mushafPalette.ink,
+    fontSize: 31,
+    lineHeight: 52,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 14,
+  },
+  translationText: {
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: mushafPalette.goldLine,
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  learningSection: {
+    alignItems: 'center',
+  },
+  eyebrow: {
+    color: mushafPalette.muted,
+    fontFamily: display.semibold,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  targetWord: {
+    color: mushafPalette.goldDeep,
+    fontFamily: naskh.bold,
+    fontSize: 26,
+    lineHeight: 42,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  meaningText: {
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  revealButton: {
+    backgroundColor: 'rgba(255,255,255,.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(233,212,154,.22)',
+    borderRadius: 18,
+    paddingVertical: 17,
+    alignItems: 'center',
+  },
+  revealButtonText: {
+    color: SESSION_LIGHT,
+    fontFamily: display.semibold,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  againButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(233,212,154,.22)',
+    borderRadius: 18,
+    paddingVertical: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  againButtonText: {
+    color: SESSION_LIGHT,
+    fontFamily: display.semibold,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  knewItButtonOuter: {
+    flex: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  knewItButton: {
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  knewItButtonText: {
+    color: SESSION_DARK,
+    fontFamily: display.bold,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  completionText: {
+    color: SESSION_LIGHT,
+    fontFamily: display.medium,
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: mushafPalette.paper,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 32,
+    maxHeight: '72%',
+  },
+  modalTitle: {
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  modalLabel: {
+    color: mushafPalette.muted,
+    fontFamily: display.bold,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginTop: 12,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  reviewScroll: {
+    marginBottom: 16,
+  },
+  reviewText: {
+    color: mushafPalette.ink,
+    fontFamily: display.medium,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  modalArabicText: {
+    color: mushafPalette.ink,
+    fontSize: 24,
+    lineHeight: 42,
+    marginBottom: 8,
+    textAlign: 'right',
+  },
+  modalTranslationText: {
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: mushafPalette.gold,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: SESSION_DARK,
+    fontFamily: display.bold,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  skeletonIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,.08)',
+  },
+  skeletonBadge: {
+    width: 86,
+    height: 35,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,.08)',
+  },
+  skeletonProgress: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,.12)',
+    marginBottom: 24,
+  },
+  skeletonCard: {
+    minHeight: 360,
+    backgroundColor: mushafPalette.paper,
+    borderRadius: 26,
+    overflow: 'hidden',
+    padding: 22,
+    justifyContent: 'center',
+  },
+  skeletonShimmer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    pointerEvents: 'none',
+    backgroundColor: '#fff',
   },
-  swipeHint: {
-    position: 'absolute',
-    borderWidth: 1.5,
+  skeletonArabicLine: {
+    height: 48,
+    backgroundColor: 'rgba(36,27,14,.08)',
+    marginVertical: 16,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignItems: 'center',
   },
-  swipeHintLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  skeletonLine: {
+    height: 16,
+    backgroundColor: 'rgba(36,27,14,.08)',
+    marginVertical: 8,
+    borderRadius: 8,
   },
-  swipeHintInterval: {
-    fontSize: 10,
-    color: theme.text.textSecondary,
-    marginTop: 2,
-  },
-  swipeHintAgain: {
-    top: '50%',
-    left: 12,
-    transform: [{ translateY: -28 }],
-  },
-  swipeHintHard: {
-    bottom: 12,
-    left: '50%',
-    transform: [{ translateX: -36 }],
-  },
-  swipeHintGood: {
-    top: '50%',
-    right: 12,
-    transform: [{ translateY: -28 }],
-  },
-  swipeHintEasy: {
-    top: 12,
-    left: '50%',
-    transform: [{ translateX: -36 }],
+  skeletonLineNarrow: {
+    height: 14,
+    backgroundColor: 'rgba(36,27,14,.08)',
+    width: '70%',
+    alignSelf: 'center',
+    marginVertical: 8,
+    borderRadius: 8,
   },
 });

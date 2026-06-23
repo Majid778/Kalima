@@ -1,0 +1,16 @@
+export const mushafPalette = {
+  parchment: '#f3ead4',
+  paper: '#fbf6ea',
+  paper2: '#efe4c9',
+  ink: '#241b0e',
+  ink2: '#5c4e30',
+  muted: '#8a7950',
+  gold: '#b8860b',
+  goldDeep: '#946c10',
+  goldSoft: '#e7d29a',
+  goldLine: '#ddc893',
+  goldRing: '#e6d4a4',
+  teal: '#3f7c74',
+  clay: '#b06a2e',
+  olive: '#6f7e42',
+} as const;

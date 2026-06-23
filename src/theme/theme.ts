@@ -1,4 +1,5 @@
 import { colors } from './colors';
+import { mushafPalette } from './palette';
 
 export type ThemeName = 'dark' | 'mushaf';
 
@@ -80,39 +81,39 @@ export const darkTheme: ThemeTokens = {
 
 export const mushafTheme: ThemeTokens = {
   surfaces: {
-    background: '#f4ecd8',
-    surface: '#ece0c4',
-    surfaceElevated: '#f6efdc',
-    border: '#d8c79a',
+    background: mushafPalette.parchment,
+    surface: mushafPalette.paper,
+    surfaceElevated: mushafPalette.paper,
+    border: mushafPalette.goldLine,
     overlay: 'rgba(44,33,19,.42)',
   },
   text: {
-    textPrimary: '#2c2113',
-    textSecondary: '#7c6b45',
-    textMuted: '#9a8454',
+    textPrimary: mushafPalette.ink,
+    textSecondary: mushafPalette.ink2,
+    textMuted: mushafPalette.muted,
     onAction: '#fffaf0',
-    onSacred: '#2c2113',
+    onSacred: mushafPalette.ink,
   },
   action: {
-    action: '#b8860b',
-    actionPressed: '#9a6f08',
-    actionDisabled: '#d8c79a',
+    action: mushafPalette.gold,
+    actionPressed: mushafPalette.goldDeep,
+    actionDisabled: mushafPalette.goldLine,
   },
   learningState: {
-    mastery: '#6b7d3f',
-    learning: '#b07a1e',
-    due: '#4a7c74',
-    locked: '#b3a785',
-    new: '#c9a94e',
+    mastery: mushafPalette.olive,
+    learning: mushafPalette.clay,
+    due: mushafPalette.teal,
+    locked: mushafPalette.muted,
+    new: mushafPalette.gold,
   },
   feedback: {
-    success: '#6b7d3f',
-    warning: '#b07a1e',
+    success: mushafPalette.olive,
+    warning: mushafPalette.clay,
     error: '#b5402f',
   },
   sacred: {
-    sacred: '#b8860b',
-    sacredMuted: '#9a8454',
+    sacred: mushafPalette.gold,
+    sacredMuted: mushafPalette.muted,
   },
 };
 

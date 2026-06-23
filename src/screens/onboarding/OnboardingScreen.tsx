@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { PrimaryCTA } from '../../components/PrimaryCTA';
+import { AppIcon } from '../../components/AppIcon';
 import { db } from '../../data/database';
 import { buildFirstWinQuestion, type FirstWinQuestion } from '../../services/onboarding/firstWin';
 import { getWordsForLevel } from '../../services/wordService';
@@ -9,6 +11,8 @@ import { useOnboardingStore } from '../../stores/onboardingStore';
 import type { ArabicLevel } from '../../stores/onboardingStore';
 import type { ThemeTokens } from '../../theme/theme';
 import { useTheme } from '../../theme/useTheme';
+import { mushafPalette } from '../../theme/palette';
+import { display } from '../../theme/typography';
 import { FirstWinStep } from './FirstWinStep';
 
 const CONCEPT_STEPS = [
@@ -21,11 +25,6 @@ const CONCEPT_STEPS = [
     subtitle: 'Choose how much guidance you need, then adjust transliteration and reading help as you grow.',
   },
 ];
-
-const FIRST_WIN_WELCOME = {
-  title: 'Start with one real word',
-  subtitle: "In a moment, you'll recognize a word from an actual ayah and see what it means.",
-};
 
 const LEVEL_CHOICES: { text: string; level: ArabicLevel }[] = [
   { text: 'Beginner', level: 'beginner' },
@@ -63,9 +62,6 @@ export default function OnboardingScreen() {
     };
   }, []);
 
-  // Completing onboarding flips `hasOnboarded` in the store; RootStackNavigator
-  // reactively swaps the Onboarding screen for the Tabs stack — no manual
-  // navigation needed.
   const handleComplete = (level: ArabicLevel) => {
     completeOnboarding(level);
   };
@@ -76,39 +72,64 @@ export default function OnboardingScreen() {
 
   const renderLoadingStep = () => (
     <View style={styles.copy}>
-      <Text style={styles.title}>Preparing your first word</Text>
+      <Text style={[styles.title, { fontFamily: display.bold }]}>Preparing your first word</Text>
       <Text style={styles.subtitle}>Kalima is finding a real Qur'anic word to begin with.</Text>
     </View>
   );
 
   const renderFirstWinWelcome = () => (
     <>
-      <View style={styles.copy}>
-        <Text style={styles.title}>{FIRST_WIN_WELCOME.title}</Text>
-        <Text style={styles.subtitle}>{FIRST_WIN_WELCOME.subtitle}</Text>
+      <View style={styles.logoContainer}>
+        <LinearGradient
+          colors={['#fff6dc', '#f0e2bc']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={styles.logoCircle}
+        >
+          <AppIcon name="diamond-logo" size={100} color={mushafPalette.gold} />
+        </LinearGradient>
       </View>
 
-      <View style={styles.actions}>
-        <Button label="Begin" onPress={() => setStep(1)} />
-        <Button label="Skip" variant="secondary" onPress={() => completeOnboarding('beginner')} />
+      <View style={styles.headlineContainer}>
+        <Text style={[styles.headline, { fontFamily: display.extrabold }]}>
+          Understand the Qur'an,{'\n'}word by word
+        </Text>
+      </View>
+
+      <View style={styles.ctaContainer}>
+        <PrimaryCTA label="Begin" onPress={() => setStep(1)} />
+        <Pressable
+          onPress={() => completeOnboarding('beginner')}
+          style={styles.textLink}
+        >
+          <Text style={styles.textLinkLabel}>I already have an account</Text>
+        </Pressable>
       </View>
     </>
   );
 
   const renderConceptStep = () => {
-    const content = CONCEPT_STEPS[step];
+    const content = CONCEPT_STEPS[step - 1];
 
     return (
       <>
         <View style={styles.copy}>
-          <Text style={styles.title}>{content.title}</Text>
+          <Text style={[styles.title, { fontFamily: display.bold }]}>{content.title}</Text>
           <Text style={styles.subtitle}>{content.subtitle}</Text>
         </View>
 
         <View style={styles.actions}>
-          <Button label="Next" onPress={() => setStep((current) => (current === 0 ? 1 : 2))} />
-          {step === 0 ? (
-            <Button label="Skip" variant="secondary" onPress={() => completeOnboarding('beginner')} />
+          <PrimaryCTA
+            label={step === 1 ? 'Next' : 'Continue'}
+            onPress={() => setStep(step === 1 ? 2 : 3)}
+          />
+          {step === 1 ? (
+            <Pressable
+              onPress={() => completeOnboarding('beginner')}
+              style={styles.secondaryButton}
+            >
+              <Text style={styles.secondaryLabel}>Skip</Text>
+            </Pressable>
           ) : null}
         </View>
       </>
@@ -118,20 +139,22 @@ export default function OnboardingScreen() {
   const renderLevelStep = () => (
     <>
       <View style={styles.copy}>
-        <Text style={styles.sectionHeader}>Arabic Level</Text>
-        <Text style={styles.title}>Where should we start?</Text>
+        <Text style={[styles.sectionHeader, { fontFamily: display.semibold }]}>Arabic Level</Text>
+        <Text style={[styles.title, { fontFamily: display.bold }]}>Where should we start?</Text>
         <Text style={styles.subtitle}>Pick the level that best matches your current Arabic reading ability.</Text>
       </View>
 
       <View style={styles.levelList}>
         {LEVEL_CHOICES.map((choice) => (
-          <Button
+          <Pressable
             key={choice.level}
-            label={choice.text}
-            variant="secondary"
             onPress={() => handleComplete(choice.level)}
             style={styles.levelButton}
-          />
+          >
+            <Text style={[styles.levelButtonLabel, { fontFamily: display.semibold }]}>
+              {choice.text}
+            </Text>
+          </Pressable>
         ))}
       </View>
     </>
@@ -153,45 +176,96 @@ export default function OnboardingScreen() {
       return renderLevelStep();
     }
 
-    return step < 2 ? renderConceptStep() : renderLevelStep();
+    if (step < 2) return renderConceptStep();
+    return renderLevelStep();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {renderContent()}
-      </ScrollView>
+    <LinearGradient
+      colors={['#fdf6e4', mushafPalette.parchment]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {renderContent()}
+        </ScrollView>
 
-      {!isLoading ? (
-        <View style={styles.dots}>
-          {Array.from({ length: totalSteps }, (_, index) => (
-            <View key={index} style={[styles.dot, step === index && styles.activeDot]} />
-          ))}
-        </View>
-      ) : null}
-    </SafeAreaView>
+        {!isLoading ? (
+          <View style={styles.dots}>
+            {Array.from({ length: totalSteps }, (_, index) => (
+              <View key={index} style={[styles.dot, step === index && styles.activeDot]} />
+            ))}
+          </View>
+        ) : null}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.surfaces.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 38,
+  },
+  logoCircle: {
+    width: 168,
+    height: 168,
+    borderRadius: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: 'rgba(184, 134, 11, 0.2)',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 1,
+    shadowRadius: 44,
+    elevation: 8,
+  },
+  headlineContainer: {
+    marginBottom: 38,
+    alignItems: 'center',
+  },
+  headline: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: mushafPalette.ink,
+    lineHeight: 32.5,
+    letterSpacing: -0.4,
+    textAlign: 'center',
+  },
+  ctaContainer: {
+    gap: 16,
+    alignItems: 'center',
+  },
+  textLink: {
+    paddingVertical: 12,
+  },
+  textLinkLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: mushafPalette.muted,
+    textAlign: 'center',
+  },
   copy: {
     marginBottom: 32,
   },
   sectionHeader: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -199,25 +273,53 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: theme.text.textPrimary,
+    color: mushafPalette.ink,
     fontSize: 32,
     fontWeight: '700',
     lineHeight: 40,
     marginBottom: 12,
   },
   subtitle: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 17,
     lineHeight: 26,
   },
   actions: {
     gap: 12,
   },
+  secondaryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: mushafPalette.paper,
+    borderWidth: 1,
+    borderColor: mushafPalette.goldLine,
+  },
+  secondaryLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: mushafPalette.ink2,
+  },
   levelList: {
     gap: 12,
   },
   levelButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: mushafPalette.paper,
+    borderWidth: 1,
+    borderColor: mushafPalette.goldLine,
     minHeight: 58,
+  },
+  levelButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: mushafPalette.ink,
   },
   dots: {
     flexDirection: 'row',
@@ -229,10 +331,10 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.surfaces.surfaceElevated,
+    backgroundColor: mushafPalette.goldSoft,
   },
   activeDot: {
     width: 20,
-    backgroundColor: theme.sacred.sacred,
+    backgroundColor: mushafPalette.gold,
   },
 });

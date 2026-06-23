@@ -181,6 +181,21 @@ export async function getTodaysVerse(
   };
 }
 
+
+export async function getGlobalWordCounts(db: DB): Promise<{ knownWords: number; totalWords: number }> {
+  const result = await db.select({
+    knownCount: sql<number>`count(distinct case when ${wordProgress.status} in ('review', 'known') then ${words.id} else null end)`,
+    totalCount: sql<number>`count(distinct ${words.id})`,
+  })
+    .from(words)
+    .leftJoin(wordProgress, eq(wordProgress.wordId, words.id));
+
+  return {
+    knownWords: Number(result[0]?.knownCount ?? 0),
+    totalWords: Number(result[0]?.totalCount ?? 0),
+  };
+}
+
 function daysSinceEpoch(date: string): number {
   const parsed = new Date(`${date}T00:00:00Z`);
   return Math.floor(parsed.getTime() / 86400000);

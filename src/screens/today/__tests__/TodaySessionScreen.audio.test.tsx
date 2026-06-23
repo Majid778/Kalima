@@ -4,13 +4,15 @@ import { TodaySessionScreen } from '../TodaySessionScreen';
 import { useSettingsStore } from '../../../stores/settingsStore';
 import { playAyah, stopAudio } from '../../../services/audio/audioRuntime';
 
-jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({
-    goBack: jest.fn(),
-    navigate: jest.fn(),
-  }),
-  useFocusEffect: jest.fn(),
-}));
+jest.mock('@react-navigation/native', () => {
+  // Return a STABLE navigation object (like the real useNavigation) so effects
+  // that depend on `navigation` do not re-run and reset session state on every render.
+  const navigation = { goBack: jest.fn(), navigate: jest.fn() };
+  return {
+    useNavigation: () => navigation,
+    useFocusEffect: jest.fn(),
+  };
+});
 
 jest.mock('react-native-gesture-handler', () => ({
   GestureDetector: ({ children }: { children: React.ReactNode }) => children,
@@ -48,6 +50,11 @@ jest.mock('expo-haptics', () => ({
     Success: 'success',
   },
 }));
+
+jest.mock('expo-linear-gradient', () => {
+  const { View: RNView } = jest.requireActual('react-native');
+  return { LinearGradient: ({ children, ...props }: { children: React.ReactNode }) => <RNView {...props}>{children}</RNView> };
+});
 
 jest.mock('../../../data/database', () => ({
   db: {},
@@ -167,19 +174,19 @@ beforeEach(() => {
 
 describe('TodaySessionScreen audio auto-play', () => {
   test('auto-plays the revealed ayah and stops when advancing to the next item', async () => {
-    const { getByTestId, getByText } = render(<TodaySessionScreen />);
+    const { getByText } = render(<TodaySessionScreen />);
 
-    await waitFor(() => expect(getByText('Tap to reveal')).toBeTruthy());
+    await waitFor(() => expect(getByText('Reveal')).toBeTruthy());
 
     expect(playAyah).not.toHaveBeenCalled();
 
-    fireEvent.press(getByText('Tap to reveal'));
+    fireEvent.press(getByText('Reveal'));
 
     await waitFor(() => {
       expect(playAyah).toHaveBeenCalledWith('audio://husary/1/2');
     });
 
-    fireEvent.press(getByTestId('grade-good'));
+    fireEvent.press(getByText('I knew it'));
 
     await waitFor(() => {
       expect(stopAudio).toHaveBeenCalled();

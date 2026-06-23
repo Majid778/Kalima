@@ -2,12 +2,18 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, Switch, StyleSheet, ScrollView, Share, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import Svg, { Circle, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useOnboardingStore, type ArabicLevel } from '../stores/onboardingStore';
 import { buildActivityGrid, useStreakStore } from '../stores/streakStore';
 import { BadgeShelf } from '../components/motivation/BadgeShelf';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Button, Card } from '../components/ui';
+import { AppIcon } from '../components/AppIcon';
+import { StatCard } from '../components/StatCard';
+import { display } from '../theme/typography';
+import { mushafPalette } from '../theme/palette';
 import { ArabicFontSize } from '../theme/typography';
 import { ThemeTokens } from '../theme/theme';
 import { useTheme } from '../theme/useTheme';
@@ -38,6 +44,8 @@ const RECITER_SEGMENTS = RECITERS.map((reciter) => ({
   label: reciter.name.split(' ')[0],
   value: reciter.id,
 }));
+
+const USER_NAME = 'Majid';
 
 export function ProfileScreen() {
   const theme = useTheme();
@@ -119,9 +127,6 @@ export function ProfileScreen() {
     kindStreak,
     longestStreak,
   }), [kindStreak, levelsCompletedCount, longestStreak, quranPercent, wordsLearned]);
-  const consistencyLine = hasAnyActivity && (kindStreak === 0 || kindStreak > currentStreak)
-    ? 'Welcome back - pick up where you left off.'
-    : 'A steady rhythm grows through small returns.';
 
   const handleExport = useCallback(async () => {
     setSyncBusy(true);
@@ -158,44 +163,128 @@ export function ProfileScreen() {
     }
   }, [importText, loadProfile]);
 
+  const userInitial = USER_NAME.charAt(0).toUpperCase();
+  const hoursRead = '2.4';
+  const currentWeekActivity = activityGrid.length > 0 ? activityGrid[activityGrid.length - 1] : [];
+  const daysActive = currentWeekActivity.filter(cell => activityColors[cell.intensity] !== activityColors[0]).length;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionHeader}>Your Progress</Text>
-
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Words mastered</Text>
-          <Text style={styles.rowValue}>{wordsMastered}</Text>
+        <View style={styles.avatarSection}>
+          <AvatarRing percent={quranPercent} initial={userInitial} />
+          <Text style={styles.quranPercentText}>{Math.round(quranPercent * 100)}% of the Qur'an</Text>
+          <Text style={styles.userName}>{USER_NAME}</Text>
         </View>
 
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Current rhythm</Text>
-          <Text style={styles.rowValue}>{kindStreak} days of consistency</Text>
+        <View style={styles.statsRow}>
+          <StatCard
+            icon="star"
+            value={wordsMastered.toString()}
+            label="mastered"
+            valueColor={mushafPalette.goldDeep}
+          />
+          <StatCard
+            icon="flame"
+            value={kindStreak.toString()}
+            label="day rhythm"
+            valueColor={mushafPalette.ink}
+          />
+          <StatCard
+            icon="clock"
+            value={hoursRead}
+            label="hours read"
+            valueColor={mushafPalette.ink}
+          />
         </View>
 
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Longest rhythm</Text>
-          <Text style={styles.rowValue}>{longestStreak} days</Text>
-        </View>
-        <Text style={styles.consistencyHint}>{consistencyLine}</Text>
-
-        {arabicLevelLabel !== null && (
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Arabic level</Text>
-            <Text style={styles.rowValue}>{arabicLevelLabel}</Text>
+        <View style={styles.weekCard}>
+          <View style={styles.weekHeader}>
+            <Text style={styles.weekLabel}>This week</Text>
+            <Text style={styles.weekDays}>{daysActive} of 7 days</Text>
           </View>
-        )}
+          <View style={styles.weekBars}>
+            {currentWeekActivity.map((cell, idx) => {
+              const isFilled = cell.intensity > 0;
+              return (
+                <WeekBar key={idx} filled={isFilled} />
+              );
+            })}
+          </View>
+        </View>
 
-        <Card style={styles.reflectionCard}>
-          <Text style={styles.reflectionTitle}>
-            This week: practiced {weeklyReflection.daysPracticedThisWeek} of 7 days
-          </Text>
-          <Text style={styles.reflectionText}>
-            {weeklyReflection.daysPracticedThisWeek > 0
-              ? 'Every day of review is a small mercy to be grateful for.'
-              : consistencyLine}
-          </Text>
-        </Card>
+        <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Display</Text>
+
+        <View style={styles.row}>
+          <View style={styles.rowTextBlock}>
+            <Text style={styles.rowLabel}>Theme</Text>
+            <Text style={styles.rowHint}>{themeName === 'dark' ? 'Dark' : 'Mushaf'}</Text>
+          </View>
+          <Switch
+            accessibilityLabel="Theme"
+            value={themeName === 'dark'}
+            onValueChange={(enabled) => setTheme(enabled ? 'dark' : 'mushaf')}
+            trackColor={{
+              false: theme.surfaces.surfaceElevated,
+              true: theme.action.action,
+            }}
+            thumbColor={theme.surfaces.surface}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Arabic Font Size</Text>
+          <SegmentedControl
+            segments={FONT_SIZE_SEGMENTS}
+            selectedValue={arabicFontSize}
+            onValueChange={setArabicFontSize}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Show Transliteration</Text>
+          <Switch
+            accessibilityLabel="Show Transliteration"
+            value={showTransliteration}
+            onValueChange={setShowTransliteration}
+            trackColor={{
+              false: theme.surfaces.surfaceElevated,
+              true: theme.action.action,
+            }}
+            thumbColor={theme.surfaces.surface}
+          />
+        </View>
+
+        <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Audio</Text>
+
+        <View style={styles.row}>
+          <View style={styles.rowTextBlock}>
+            <Text style={styles.rowLabel}>Reciter</Text>
+            <Text style={styles.rowHint}>{selectedReciter.name}</Text>
+          </View>
+          <SegmentedControl
+            segments={RECITER_SEGMENTS}
+            selectedValue={reciterId}
+            onValueChange={setReciterId}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <View style={styles.rowTextBlock}>
+            <Text style={styles.rowLabel}>Auto-play recitation</Text>
+            <Text style={styles.rowHint}>Play the first example ayah after reveal.</Text>
+          </View>
+          <Switch
+            accessibilityLabel="Auto-play recitation"
+            value={autoPlayAudio}
+            onValueChange={setAutoPlayAudio}
+            trackColor={{
+              false: theme.surfaces.surfaceElevated,
+              true: theme.action.action,
+            }}
+            thumbColor={theme.surfaces.surface}
+          />
+        </View>
 
         <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Badges</Text>
         <BadgeShelf badges={earnedBadges} />
@@ -248,115 +337,102 @@ export function ProfileScreen() {
           <Text style={styles.legendText}>More</Text>
         </View>
 
-        <View style={styles.displaySection}>
-          {/* Section header per D-06 */}
-          <Text style={styles.sectionHeader}>Display</Text>
-
-          <View style={styles.row}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowLabel}>Theme</Text>
-              <Text style={styles.rowHint}>{themeName === 'dark' ? 'Dark' : 'Mushaf'}</Text>
-            </View>
-            <Switch
-              accessibilityLabel="Theme"
-              value={themeName === 'dark'}
-              onValueChange={(enabled) => setTheme(enabled ? 'dark' : 'mushaf')}
-              trackColor={{
-                false: theme.surfaces.surfaceElevated,
-                true: theme.action.action,
-              }}
-              thumbColor={theme.surfaces.surface}
-            />
-          </View>
-
-          {/* Arabic Font Size row per D-07, D-08 */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Arabic Font Size</Text>
-            <SegmentedControl
-              segments={FONT_SIZE_SEGMENTS}
-              selectedValue={arabicFontSize}
-              onValueChange={setArabicFontSize}
-            />
-          </View>
-
-          {/* Transliteration toggle per D-07, D-13, D-14 */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Show Transliteration</Text>
-            <Switch
-              accessibilityLabel="Show Transliteration"
-              value={showTransliteration}
-              onValueChange={setShowTransliteration}
-              trackColor={{
-                false: theme.surfaces.surfaceElevated,
-                true: theme.action.action,
-              }}
-              thumbColor={theme.surfaces.surface}
-            />
-          </View>
-        </View>
-
-        <View style={styles.audioSection}>
-          <Text style={styles.sectionHeader}>Audio</Text>
-
-          <View style={styles.row}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowLabel}>Reciter</Text>
-              <Text style={styles.rowHint}>{selectedReciter.name}</Text>
-            </View>
-            <SegmentedControl
-              segments={RECITER_SEGMENTS}
-              selectedValue={reciterId}
-              onValueChange={setReciterId}
-            />
-          </View>
-
-          <View style={styles.row}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowLabel}>Auto-play recitation</Text>
-              <Text style={styles.rowHint}>Play the first example āyah after reveal.</Text>
-            </View>
-            <Switch
-              accessibilityLabel="Auto-play recitation"
-              value={autoPlayAudio}
-              onValueChange={setAutoPlayAudio}
-              trackColor={{
-                false: theme.surfaces.surfaceElevated,
-                true: theme.action.action,
-              }}
-              thumbColor={theme.surfaces.surface}
-            />
-          </View>
-        </View>
-
-        <View style={styles.backupSection}>
-          {/* Cloud sync is v2.1; this snapshot + mergeWordProgress are its foundation. */}
-          <Text style={styles.sectionHeader}>Backup & restore</Text>
-          <Button
-            label="Export backup"
-            onPress={handleExport}
-            disabled={syncBusy}
-            variant="secondary"
-          />
-          <TextInput
-            accessibilityLabel="Backup JSON"
-            multiline
-            onChangeText={setImportText}
-            placeholder="Paste backup JSON"
-            placeholderTextColor={theme.text.textMuted}
-            style={styles.backupInput}
-            value={importText}
-          />
-          <Button
-            label="Restore"
-            onPress={handleRestore}
-            disabled={syncBusy || importText.trim().length === 0}
-          />
-          {syncMessage !== null && (
-            <Text style={styles.backupMessage}>{syncMessage}</Text>
-          )}
-        </View>
+        <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Backup and restore</Text>
+        <Button
+          label="Export backup"
+          onPress={handleExport}
+          disabled={syncBusy}
+          variant="secondary"
+        />
+        <TextInput
+          accessibilityLabel="Backup JSON"
+          multiline
+          onChangeText={setImportText}
+          placeholder="Paste backup JSON"
+          placeholderTextColor={theme.text.textMuted}
+          style={styles.backupInput}
+          value={importText}
+        />
+        <Button
+          label="Restore"
+          onPress={handleRestore}
+          disabled={syncBusy || importText.trim().length === 0}
+        />
+        {syncMessage !== null && (
+          <Text style={styles.backupMessage}>{syncMessage}</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function WeekBar({ filled }: { filled: boolean }) {
+  if (filled) {
+    return (
+      <LinearGradient
+        colors={['#dcb04a', '#b8860b']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.weekBar}
+      />
+    );
+  }
+  return <View style={[styles.weekBar, styles.weekBarEmpty]} />;
+}
+
+function AvatarRing({ percent, initial }: { percent: number; initial: string }) {
+  const circumference = 2 * Math.PI * 38;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <View style={avatarStyles.avatarRingContainer}>
+      <Svg width={96} height={96} viewBox="0 0 96 96" style={avatarStyles.avatarSvg}>
+        <defs>
+          <SvgLinearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#dcb04a" />
+            <Stop offset="100%" stopColor="#946c10" />
+          </SvgLinearGradient>
+        </defs>
+        <Circle cx="48" cy="48" r="38" fill="none" stroke={mushafPalette.goldRing} strokeWidth="8" />
+        <Circle
+          cx="48"
+          cy="48"
+          r="38"
+          fill="none"
+          stroke="url(#avatarGrad)"
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 48 48)"
+        />
+      </Svg>
+      <View style={avatarStyles.avatarInner}>
+        <Text style={avatarStyles.avatarInitial}>{initial}</Text>
+      </View>
+    </View>
+  );
+}
+
+function SettingsRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={settingsStyles.settingsRow}>
+      <Text style={settingsStyles.settingsLabel}>{label}</Text>
+      <Text style={settingsStyles.settingsValue}>{value}</Text>
+    </View>
+  );
+}
+
+function SettingsRowToggle({ label, value, onValueChange }: { label: string; value: boolean; onValueChange: (val: boolean) => void }) {
+  return (
+    <View style={settingsStyles.settingsRowToggle}>
+      <Text style={settingsStyles.settingsLabel}>{label}</Text>
+      <View style={settingsStyles.toggleContainer}>
+        <View style={[settingsStyles.toggleTrack, value && settingsStyles.toggleTrackActive]}>
+          <View style={[settingsStyles.toggleThumb, value && settingsStyles.toggleThumbActive]} />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -372,111 +448,240 @@ function formatBestScore(bestQuizScore: number | null): string {
   return `Best ${Math.round(bestQuizScore * 100)}%`;
 }
 
-const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
+const avatarStyles = StyleSheet.create({
+  avatarRingContainer: {
+    position: 'relative',
+    width: 96,
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  avatarSvg: {
+    position: 'absolute',
+  },
+  avatarInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fdf6e6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: mushafPalette.goldDeep,
+    fontFamily: display.bold,
+  },
+});
+
+const settingsStyles = StyleSheet.create({
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+  },
+  settingsRowToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+  },
+  settingsLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: mushafPalette.ink,
+    fontFamily: display.medium,
+  },
+  settingsValue: {
+    fontSize: 14,
+    color: mushafPalette.muted,
+    fontFamily: display.regular,
+  },
+  toggleContainer: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'transparent',
+  },
+  toggleTrack: {
+    flex: 1,
+    borderRadius: 13,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  toggleTrackActive: {
+    backgroundColor: mushafPalette.gold,
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    alignSelf: 'flex-start',
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
+});
+
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.surfaces.background,
+    backgroundColor: mushafPalette.parchment,
   },
   content: {
-    padding: 20,
     paddingBottom: 36,
   },
+  avatarSection: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 11,
+    paddingHorizontal: 22,
+    marginBottom: 13,
+  },
+  quranPercentText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: mushafPalette.goldDeep,
+    marginBottom: 2,
+    fontFamily: display.bold,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
+  },
+  weekCard: {
+    marginHorizontal: 22,
+    marginBottom: 16,
+    padding: 15,
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  weekHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  weekLabel: {
+    fontSize: 12,
+    color: mushafPalette.muted,
+    fontFamily: display.medium,
+  },
+  weekDays: {
+    fontSize: 12,
+    color: mushafPalette.muted,
+    fontFamily: display.medium,
+  },
+  weekBars: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekBar: {
+    flex: 1,
+    height: 36,
+    borderRadius: 9,
+  },
+  weekBarEmpty: {
+    backgroundColor: mushafPalette.goldRing,
+  },
   sectionHeader: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.muted,
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 16,
+    paddingHorizontal: 22,
+    fontFamily: display.semibold,
   },
   sectionSpacing: {
     marginTop: 28,
   },
-  displaySection: {
-    marginTop: 28,
-  },
-  audioSection: {
-    marginTop: 28,
-  },
-  backupSection: {
-    marginTop: 28,
-  },
   backupInput: {
-    backgroundColor: theme.surfaces.surface,
-    borderColor: theme.surfaces.border,
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
     borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    color: theme.text.textPrimary,
+    borderWidth: 1,
+    color: mushafPalette.ink,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
+    marginHorizontal: 22,
     marginTop: 12,
     minHeight: 120,
     padding: 12,
     textAlignVertical: 'top',
   },
   backupMessage: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 14,
     lineHeight: 20,
+    marginHorizontal: 22,
     marginTop: 12,
-  },
-  reflectionCard: {
-    marginTop: 24,
-  },
-  reflectionTitle: {
-    color: theme.text.textPrimary,
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  reflectionText: {
-    color: theme.text.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
+    fontFamily: display.regular,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 22,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.surfaces.border,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
   },
   rowTextBlock: {
     flex: 1,
     marginRight: 16,
   },
   rowLabel: {
-    color: theme.text.textPrimary,
+    color: mushafPalette.ink,
     flex: 1,
     fontSize: 16,
+    fontFamily: display.regular,
   },
   rowHint: {
-    color: theme.text.textMuted,
+    color: mushafPalette.muted,
     fontSize: 13,
     marginTop: 4,
+    fontFamily: display.regular,
   },
   rowValue: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     flexShrink: 1,
     fontSize: 16,
     marginLeft: 16,
     textAlign: 'right',
-  },
-  consistencyHint: {
-    color: theme.text.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 10,
+    fontFamily: display.regular,
   },
   emptyText: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 15,
+    fontFamily: display.regular,
+    paddingHorizontal: 22,
   },
   activityScroll: {
     gap: 4,
     paddingVertical: 2,
+    paddingHorizontal: 22,
   },
   activityWeek: {
     gap: 4,
@@ -492,10 +697,189 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 10,
+    marginHorizontal: 22,
   },
   legendText: {
-    color: theme.text.textMuted,
+    color: mushafPalette.muted,
     fontSize: 12,
+    fontFamily: display.regular,
+  },
+  legendCell: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+  },
+});
+
+const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: mushafPalette.parchment,
+  },
+  content: {
+    paddingBottom: 36,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 11,
+    paddingHorizontal: 22,
+    marginBottom: 13,
+  },
+  quranPercentText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: mushafPalette.goldDeep,
+    marginBottom: 2,
+    fontFamily: display.bold,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
+  },
+  weekCard: {
+    marginHorizontal: 22,
+    marginBottom: 16,
+    padding: 15,
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  weekHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  weekLabel: {
+    fontSize: 12,
+    color: mushafPalette.muted,
+    fontFamily: display.medium,
+  },
+  weekDays: {
+    fontSize: 12,
+    color: mushafPalette.muted,
+    fontFamily: display.medium,
+  },
+  weekBars: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekBar: {
+    flex: 1,
+    height: 36,
+    borderRadius: 9,
+  },
+  weekBarEmpty: {
+    backgroundColor: mushafPalette.goldRing,
+  },
+  sectionHeader: {
+    color: mushafPalette.muted,
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    paddingHorizontal: 22,
+    fontFamily: display.semibold,
+  },
+  sectionSpacing: {
+    marginTop: 28,
+  },
+  backupInput: {
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: mushafPalette.ink,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    marginHorizontal: 22,
+    marginTop: 12,
+    minHeight: 120,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  backupMessage: {
+    color: mushafPalette.ink2,
+    fontSize: 14,
+    lineHeight: 20,
+    marginHorizontal: 22,
+    marginTop: 12,
+    fontFamily: display.regular,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+  },
+  rowTextBlock: {
+    flex: 1,
+    marginRight: 16,
+  },
+  rowLabel: {
+    color: mushafPalette.ink,
+    flex: 1,
+    fontSize: 16,
+    fontFamily: display.regular,
+  },
+  rowHint: {
+    color: mushafPalette.muted,
+    fontSize: 13,
+    marginTop: 4,
+    fontFamily: display.regular,
+  },
+  rowValue: {
+    color: mushafPalette.ink2,
+    flexShrink: 1,
+    fontSize: 16,
+    marginLeft: 16,
+    textAlign: 'right',
+    fontFamily: display.regular,
+  },
+  emptyText: {
+    color: mushafPalette.ink2,
+    fontSize: 15,
+    fontFamily: display.regular,
+    paddingHorizontal: 22,
+  },
+  activityScroll: {
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 22,
+  },
+  activityWeek: {
+    gap: 4,
+  },
+  activityCell: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    marginHorizontal: 22,
+  },
+  legendText: {
+    color: mushafPalette.muted,
+    fontSize: 12,
+    fontFamily: display.regular,
   },
   legendCell: {
     width: 10,

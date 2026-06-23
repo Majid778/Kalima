@@ -6,10 +6,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { db } from '../../data/database';
 import {
@@ -22,8 +22,11 @@ import {
 } from '../../services/quizService';
 import { getLocalToday } from '../../services/sm2';
 import { ArabicText } from '../../components/ArabicText';
+import { AppIcon } from '../../components/AppIcon';
+import { PrimaryCTA } from '../../components/PrimaryCTA';
 import { useStreakStore } from '../../stores/streakStore';
-import { colors } from '../../theme/colors';
+import { mushafPalette } from '../../theme/palette';
+import { display } from '../../theme/typography';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProp = NativeStackScreenProps<RootStackParamList, 'QuizSession'>['route'];
@@ -49,12 +52,11 @@ export function QuizSessionScreen() {
     try {
       const { levelWords, globalPool } = await getQuizWords(db, levelId);
       
-      // Generate seed from levelId + today for determinism
       const seedStr = `${levelId}-${today}`;
       let seed = 0;
       for (let i = 0; i < seedStr.length; i++) {
         seed = ((seed << 5) - seed) + seedStr.charCodeAt(i);
-        seed |= 0; // Convert to 32-bit integer
+        seed |= 0;
       }
       
       const rng = mulberry32(seed);
@@ -66,19 +68,6 @@ export function QuizSessionScreen() {
       setIsLoading(false);
     }
   };
-
-  // Update header with progress
-  useEffect(() => {
-    if (questions.length > 0 && !isComplete) {
-      const questionNum = currentIndex + 1;
-      navigation.setOptions({
-        title: `Question ${questionNum}/${questions.length}`,
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.text,
-        headerShadowVisible: false,
-      });
-    }
-  }, [questions.length, currentIndex, isComplete, navigation]);
 
   const currentQuestion = questions[currentIndex];
 
@@ -137,16 +126,14 @@ export function QuizSessionScreen() {
     });
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={mushafPalette.gold} />
       </View>
     );
   }
 
-  // No questions
   if (questions.length === 0) {
     return (
       <View style={styles.centered}>
@@ -163,188 +150,251 @@ export function QuizSessionScreen() {
   const matchingQ = isMatchingQuestion ? (currentQuestion as Extract<QuizQuestion, { kind: 'matching' }>) : null;
   const mcQ = isMCQuestion ? (currentQuestion as Extract<QuizQuestion, { kind: 'multiple-choice' }>) : null;
 
-  // Matching question state check
   const matchingAnsweredCount = matchingQ ? matchingQ.pairs.filter(p => matchingState[p.wordId]).length : 0;
   const matchingAllAnswered = matchingQ ? matchingAnsweredCount === matchingQ.pairs.length : false;
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* MC Question */}
-      {isMCQuestion && mcQ && (
-        <View>
-          <View style={styles.questionSection}>
-            <Text style={styles.questionLabel}>What does this word mean?</Text>
-            <ArabicText size="large" style={styles.arabicWord}>
-              {mcQ.arabic}
-            </ArabicText>
-            <Text style={styles.transliteration}>{mcQ.transliteration}</Text>
-          </View>
+  const progress = ((currentIndex + 1) / questions.length) * 100;
 
-          <View style={styles.optionsSection}>
-            {mcQ.options.map((option, idx) => (
-              <Pressable
-                key={idx}
-                style={[
-                  styles.optionButton,
-                  answers[currentIndex] === option && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleMCAnswer(option)}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    answers[currentIndex] === option && styles.optionTextSelected,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </Pressable>
-            ))}
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Custom top bar */}
+      <View style={styles.topBar}>
+        <Pressable onPress={() => navigation.goBack()}>
+          <AppIcon name="chevron-left" size={22} color={mushafPalette.muted} strokeWidth={1.8} />
+        </Pressable>
+        
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarTrack, { width: '100%' }]}>
+            <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
           </View>
         </View>
-      )}
+        
+        <Text style={styles.progressText}>{currentIndex + 1}/{questions.length}</Text>
+      </View>
 
-      {/* Matching Question */}
-      {isMatchingQuestion && matchingQ && (
-        <View>
-          <View style={styles.questionSection}>
-            <Text style={styles.questionLabel}>Match each word to its meaning</Text>
-          </View>
-
-          <View style={styles.matchingContainer}>
-            {/* Left side: words */}
-            <View style={styles.matchingSide}>
-              {matchingQ.pairs.map(pair => (
-                <Pressable
-                  key={pair.wordId}
-                  style={[
-                    styles.matchingWord,
-                    matchingState[pair.wordId] && styles.matchingWordSelected,
-                  ]}
-                >
-                  <ArabicText style={styles.matchingArabic}>{pair.arabic}</ArabicText>
-                </Pressable>
-              ))}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        {/* MC Question */}
+        {isMCQuestion && mcQ && (
+          <View>
+            <View style={styles.promptSection}>
+              <Text style={styles.eyebrow}>what does this mean</Text>
+              <ArabicText style={[styles.arabicWord, { fontWeight: '700' }]}>
+                {mcQ.arabic}
+              </ArabicText>
+              <Text style={styles.transliteration}>{mcQ.transliteration}</Text>
             </View>
 
-            {/* Right side: meanings */}
-            <View style={styles.matchingSide}>
-              {matchingQ.meaningBank.map((meaning, idx) => (
+            <View style={styles.optionsSection}>
+              {mcQ.options.map((option, idx) => (
                 <Pressable
                   key={idx}
                   style={[
-                    styles.matchingMeaning,
-                    Object.values(matchingState).includes(meaning) && styles.matchingMeaningSelected,
+                    styles.optionCard,
+                    answers[currentIndex] === option && styles.optionCardSelected,
                   ]}
-                  onPress={() => {
-                    // Find which word is paired with this meaning
-                    const pairedWordId = Object.entries(matchingState).find(
-                      ([_, v]) => v === meaning,
-                    )?.[0];
-                    if (pairedWordId) {
-                      handleMatchingPair(parseInt(pairedWordId, 10), meaning);
-                    } else {
-                      // Find an unpaired word to assign
-                      const unpairedWord = matchingQ.pairs.find(p => !matchingState[p.wordId]);
-                      if (unpairedWord) {
-                        handleMatchingPair(unpairedWord.wordId, meaning);
-                      }
-                    }
-                  }}
+                  onPress={() => handleMCAnswer(option)}
                 >
-                  <Text style={styles.matchingMeaningText}>{meaning}</Text>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      answers[currentIndex] === option && styles.optionTextSelected,
+                    ]}
+                  >
+                    {option}
+                  </Text>
                 </Pressable>
               ))}
             </View>
-          </View>
 
-          <Pressable
-            style={[styles.submitButton, !matchingAllAnswered && styles.submitButtonDisabled]}
-            onPress={handleMatchingSubmit}
-            disabled={!matchingAllAnswered}
-          >
-            <Text style={styles.submitButtonText}>
-              {matchingAnsweredCount}/{matchingQ.pairs.length} Paired
-            </Text>
-          </Pressable>
-        </View>
-      )}
-    </ScrollView>
+            <View style={styles.buttonContainer}>
+              <PrimaryCTA 
+                label="Check"
+                onPress={() => handleMCAnswer(answers[currentIndex] as string)}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Matching Question */}
+        {isMatchingQuestion && matchingQ && (
+          <View>
+            <View style={styles.promptSection}>
+              <Text style={styles.eyebrow}>match each word to its meaning</Text>
+            </View>
+
+            <View style={styles.matchingContainer}>
+              <View style={styles.matchingSide}>
+                {matchingQ.pairs.map(pair => (
+                  <Pressable
+                    key={pair.wordId}
+                    style={[
+                      styles.matchingWord,
+                      matchingState[pair.wordId] && styles.matchingWordSelected,
+                    ]}
+                  >
+                    <ArabicText style={styles.matchingArabic}>{pair.arabic}</ArabicText>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.matchingSide}>
+                {matchingQ.meaningBank.map((meaning, idx) => (
+                  <Pressable
+                    key={idx}
+                    style={[
+                      styles.matchingMeaning,
+                      Object.values(matchingState).includes(meaning) && styles.matchingMeaningSelected,
+                    ]}
+                    onPress={() => {
+                      const pairedWordId = Object.entries(matchingState).find(
+                        ([_, v]) => v === meaning,
+                      )?.[0];
+                      if (pairedWordId) {
+                        handleMatchingPair(parseInt(pairedWordId, 10), meaning);
+                      } else {
+                        const unpairedWord = matchingQ.pairs.find(p => !matchingState[p.wordId]);
+                        if (unpairedWord) {
+                          handleMatchingPair(unpairedWord.wordId, meaning);
+                        }
+                      }
+                    }}
+                  >
+                    <Text style={styles.matchingMeaningText}>{meaning}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.buttonContainer}>
+              <PrimaryCTA 
+                label="Check"
+                onPress={handleMatchingSubmit}
+              />
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    padding: 16,
+    backgroundColor: mushafPalette.parchment,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: mushafPalette.parchment,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: mushafPalette.ink,
     marginBottom: 16,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: mushafPalette.gold,
     borderRadius: 8,
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
   buttonText: {
-    color: colors.background,
+    color: mushafPalette.parchment,
     fontSize: 16,
     fontWeight: '600',
   },
-  questionSection: {
-    marginBottom: 24,
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 4,
+    gap: 14,
   },
-  questionLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
+  progressBarContainer: {
+    flex: 1,
+    height: 7,
+    backgroundColor: mushafPalette.goldRing,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarTrack: {
+    flex: 1,
+    position: 'relative',
+  },
+  progressBarFill: {
+    height: 7,
+    backgroundColor: mushafPalette.gold,
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: mushafPalette.muted,
+    fontFamily: display.semibold,
+    minWidth: 35,
+    textAlign: 'right',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingHorizontal: 22,
+    paddingVertical: 36,
+  },
+  promptSection: {
+    alignItems: 'center',
+    marginBottom: 38,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: mushafPalette.muted,
+    fontFamily: display.semibold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   arabicWord: {
-    fontSize: 36,
-    marginVertical: 12,
+    fontSize: 60,
+    color: mushafPalette.ink,
+    marginTop: 16,
+    textAlign: 'center',
   },
   transliteration: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
+    fontSize: 13,
+    color: mushafPalette.muted,
+    marginTop: 4,
+    fontFamily: display.regular,
   },
   optionsSection: {
     gap: 12,
+    marginBottom: 22,
   },
-  optionButton: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
+  optionCard: {
+    backgroundColor: mushafPalette.paper,
+    borderRadius: 22,
+    paddingVertical: 17,
+    paddingHorizontal: 15,
+    borderWidth: 0,
+  },
+  optionCardSelected: {
+    backgroundColor: '#fbefcf',
     borderWidth: 2,
-    borderColor: colors.border,
-  },
-  optionButtonSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    borderColor: mushafPalette.gold,
   },
   optionText: {
-    fontSize: 16,
-    color: colors.text,
+    fontSize: 15,
+    fontWeight: '500',
+    color: mushafPalette.ink,
     textAlign: 'center',
+    fontFamily: display.medium,
   },
   optionTextSelected: {
-    color: colors.background,
-    fontWeight: '600',
+    color: mushafPalette.goldDeep,
+    fontWeight: '700',
+    fontFamily: display.bold,
   },
   matchingContainer: {
     flexDirection: 'row',
@@ -356,48 +406,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   matchingWord: {
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: mushafPalette.paper,
     borderRadius: 8,
     padding: 12,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: mushafPalette.goldLine,
     alignItems: 'center',
   },
   matchingWordSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: mushafPalette.gold,
+    borderColor: mushafPalette.gold,
   },
   matchingArabic: {
     fontSize: 16,
+    color: mushafPalette.ink,
   },
   matchingMeaning: {
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: mushafPalette.paper,
     borderRadius: 8,
     padding: 12,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: mushafPalette.goldLine,
   },
   matchingMeaningSelected: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
+    backgroundColor: '#f0e5c3',
+    borderColor: mushafPalette.gold,
   },
   matchingMeaningText: {
     fontSize: 14,
-    color: colors.text,
+    color: mushafPalette.ink,
+    textAlign: 'center',
+    fontFamily: display.medium,
   },
-  submitButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: colors.textMuted,
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '600',
+  buttonContainer: {
+    paddingHorizontal: 0,
+    marginTop: 22,
   },
 });

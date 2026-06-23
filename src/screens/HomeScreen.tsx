@@ -4,14 +4,14 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Pressable,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootStackNavigator';
 import { db } from '../data/database';
 import {
-  getQuranPercent,
+  getQuranPercent, getGlobalWordCounts,
   getTodaysVerse,
   MILESTONES,
 } from '../services/progressService';
@@ -21,9 +21,16 @@ import { getWordsForLevel } from '../services/wordService';
 import { useStreakStore } from '../stores/streakStore';
 import { buildTodaySession, SessionSequence } from '../services/sessionService';
 import { MilestoneMoment } from '../components/MilestoneMoment';
-import { Button, Card, Skeleton } from '../components/ui';
+import { Skeleton } from '../components/ui';
+import { ProgressRing } from '../components/ProgressRing';
+import { PrimaryCTA } from '../components/PrimaryCTA';
+import { CountBox } from '../components/CountBox';
+import { Chip } from '../components/Chip';
+import { ArabicText } from '../components/ArabicText';
+import { AppIcon } from '../components/AppIcon';
+import { mushafPalette } from '../theme/palette';
+import { display } from '../theme/typography';
 import type { ThemeTokens } from '../theme/theme';
-import { serifFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -35,6 +42,8 @@ interface HomeStats {
   todaysVerse: TodaysVerse;
   session: SessionSequence | null;
   practiceStats: Awaited<ReturnType<typeof getPracticeStats>>;
+  knownWords: number;
+  totalWords: number;
 }
 
 const SESSION_CONFIG = {
@@ -60,12 +69,14 @@ export function HomeScreen() {
         todaysVerse,
         dueCards,
         availableNew,
+        wordCounts,
       ] = await Promise.all([
         getQuranPercent(db),
         getPracticeStats(db, today),
         getTodaysVerse(db, today),
         getDueCards(db, today, 200),
         getWordsForLevel(db, 1),
+        getGlobalWordCounts(db),
       ]);
 
       const session = buildTodaySession(dueCards, availableNew, {
@@ -79,6 +90,8 @@ export function HomeScreen() {
         todaysVerse,
         session,
         practiceStats,
+        knownWords: wordCounts.knownWords,
+        totalWords: wordCounts.totalWords,
       });
 
       const celebratedMilestones = useStreakStore.getState().celebratedMilestones;
@@ -116,116 +129,127 @@ export function HomeScreen() {
 
   if (isLoading || !stats) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Hero card skeleton */}
-          <Card style={styles.heroCard}>
-            <Skeleton height={12} width={120} />
-            <Skeleton height={48} width={120} style={styles.skeletonSpacing} />
-            <Skeleton height={6} width="100%" />
-          </Card>
+          {/* Greeting skeleton */}
+          <Skeleton height={12} width={120} />
+          <Skeleton height={26} width={80} style={{ marginTop: 6 }} />
 
-          {/* Today's session skeleton */}
-          <Card style={styles.sessionCard}>
-            <Skeleton height={20} width={80} />
-            <Skeleton height={40} width="100%" radius={8} style={styles.skeletonSpacingLarge} />
-          </Card>
+          {/* Progress ring skeleton */}
+          <Skeleton
+            height={196}
+            width={196}
+            radius={98}
+            style={{ marginTop: 14, alignSelf: 'center' }}
+          />
 
-          {/* Verse skeleton */}
-          <Card style={styles.verseCard}>
-            <Skeleton height={16} width={100} />
-            <Skeleton height={60} width="100%" style={styles.skeletonSpacing} />
-            <Skeleton height={14} width="100%" />
-          </Card>
+          {/* Card skeleton */}
+          <Skeleton
+            height={180}
+            width="100%"
+            radius={14}
+            style={{ marginTop: 18 }}
+          />
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  const progressWidth = `${Math.min(100, Math.max(0, stats.quranPercent * 100))}%` as `${number}%`;
   const displayPercent = Math.round(stats.quranPercent * 100);
   const hasSessionItems = stats.session && stats.session.items.length > 0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* COMPREHENSION HERO (from JourneyScreen) */}
-        <Card elevated style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>Qur'an understood</Text>
-          <Text style={styles.heroPercent}>
-            {displayPercent}
-            <Text style={styles.heroPercentMark}>%</Text>
-          </Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: progressWidth }]} />
+        {/* GREETING */}
+        <View style={styles.greetingRow}>
+          <View style={styles.greetingColumn}>
+            <Text style={styles.greeting}>Assalamu alaikum</Text>
+            <Text style={styles.name}>Majid</Text>
           </View>
-        </Card>
+          <Chip
+            icon="flame"
+            label={`${currentStreak} days`}
+          />
+        </View>
 
-        {/* TODAY'S SESSION CARD (from TodayHomeScreen) */}
-        <Card style={styles.sessionCard}>
-          <Text style={styles.cardTitle}>Today</Text>
+        {/* PROGRESS RING */}
+        <View style={styles.ringContainer}>
+          <ProgressRing
+            percent={displayPercent}
+            size={196}
+            stroke={13}
+            centerLabel={`${displayPercent}%`}
+          />
+          <Text style={styles.ringCaption}>
+            {stats.knownWords.toLocaleString()} of {stats.totalWords.toLocaleString()} words known
+          </Text>
+        </View>
+
+        {/* TODAY'S SESSION CARD */}
+        <View style={styles.sessionCard}>
+          <View style={styles.sessionHeader}>
+            <Text style={styles.sessionTitle}>Today's session</Text>
+            <View style={styles.sessionMeta}>
+              <AppIcon name="clock" size={14} color={mushafPalette.muted} />
+              <Text style={styles.sessionTime}>6 min</Text>
+            </View>
+          </View>
+
           {hasSessionItems ? (
             <>
-              <Text style={styles.sessionItemCount}>
-                {stats.session!.items.length} items
-              </Text>
-              <View style={styles.breakdownContainer}>
+              {/* COUNT BOXES */}
+              <View style={styles.countBoxRow}>
                 {stats.session!.newCount > 0 && (
-                  <BreakdownPill label="New" count={stats.session!.newCount} />
+                  <CountBox
+                    label="New"
+                    value={stats.session!.newCount}
+                    color={mushafPalette.gold}
+                  />
                 )}
                 {stats.session!.reviewCount > 0 && (
-                  <BreakdownPill label="Review" count={stats.session!.reviewCount} />
+                  <CountBox
+                    label="Review"
+                    value={stats.session!.reviewCount}
+                    color={mushafPalette.teal}
+                  />
                 )}
                 {stats.session!.checkCount > 0 && (
-                  <BreakdownPill label="Check" count={stats.session!.checkCount} />
+                  <CountBox
+                    label="Check"
+                    value={stats.session!.checkCount}
+                    color={mushafPalette.clay}
+                  />
                 )}
               </View>
-              <Pressable
-                style={styles.startButton}
+
+              {/* CTA BUTTON */}
+              <PrimaryCTA
+                label="Start reading"
+                arrow={true}
                 onPress={() => navigation.navigate('TodaySession')}
-              >
-                <Text style={styles.startButtonText}>Start Today Session</Text>
-              </Pressable>
+              />
             </>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>You're all caught up</Text>
-              <Text style={styles.emptySubtitle}>
-                Come back tomorrow for more.
-              </Text>
+              <Text style={styles.emptySubtitle}>Come back tomorrow for more.</Text>
             </View>
           )}
-        </Card>
+        </View>
 
-        {/* PRACTICE-DUE LINK (from JourneyScreen) */}
-        {stats.dueCount > 0 && (
-          <Pressable
-            style={styles.practiceLinkContainer}
-            onPress={() => navigation.navigate('PracticeSession')}
-          >
-            <Text style={styles.practiceLink}>Practice {stats.dueCount} due →</Text>
-          </Pressable>
-        )}
-
-        {/* TODAY'S VERSE (from JourneyScreen) */}
+        {/* TODAY'S VERSE */}
         {stats.todaysVerse && (
-          <Card elevated style={styles.verseCard}>
-            <Text style={styles.cardTitle}>Today's Verse</Text>
-            <Text style={styles.verseReference}>
-              {stats.todaysVerse.verse.surahNumber}:{stats.todaysVerse.verse.ayahNumber}
-            </Text>
-            <Text style={styles.verseArabic}>
+          <View style={styles.verseSection}>
+            <Text style={styles.verseTitle}>Today's verse</Text>
+            <ArabicText style={styles.verseArabic}>
               {stats.todaysVerse.verse.arabicText}
+            </ArabicText>
+            <Text style={styles.verseTranslation}>
+              {stats.todaysVerse.verse.translation}
             </Text>
-            <Text style={styles.translation}>{stats.todaysVerse.verse.translation}</Text>
-            <Text style={styles.knownWords}>
-              You know {stats.todaysVerse.knownCount}/{stats.todaysVerse.totalCount} words
-            </Text>
-          </Card>
+          </View>
         )}
-
-        {/* Minimal streak line */}
-        <Text style={styles.streakText}>{currentStreak}-day rhythm</Text>
       </ScrollView>
 
       <MilestoneMoment
@@ -233,206 +257,138 @@ export function HomeScreen() {
         percent={celebrating ?? 0}
         onDismiss={dismissCelebration}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
-function BreakdownPill({
-  label,
-  count,
-}: {
-  label: string;
-  count: number;
-}) {
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
+const makeStyles = (theme: ThemeTokens) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: mushafPalette.parchment,
+    },
+    content: {
+      paddingHorizontal: 24,
+      paddingTop: 6,
+      paddingBottom: 32,
+    },
 
-  return (
-    <View style={styles.pill}>
-      <Text style={styles.pillText}>{label} {count}</Text>
-    </View>
-  );
-}
+    /* GREETING */
+    greetingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 0,
+    },
+    greetingColumn: {
+      flex: 1,
+    },
+    greeting: {
+      fontSize: 13,
+      color: mushafPalette.muted,
+      fontFamily: display.semibold,
+      marginBottom: 2,
+    },
+    name: {
+      fontSize: 26,
+      color: mushafPalette.ink,
+      fontFamily: display.bold,
+      fontWeight: '700',
+    },
 
-const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.surfaces.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: theme.surfaces.background,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+    /* PROGRESS RING */
+    ringContainer: {
+      alignItems: 'center',
+      marginTop: 32,
+      marginBottom: 18,
+    },
+    ringCaption: {
+      fontSize: 13,
+      color: mushafPalette.ink2,
+      marginTop: 2,
+      fontFamily: display.regular,
+    },
 
-  // HERO CARD STYLES
-  heroCard: {
-    alignItems: 'flex-start',
-    backgroundColor: theme.surfaces.surfaceElevated,
-    borderColor: theme.surfaces.border,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  heroEyebrow: {
-    color: theme.sacred.sacredMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  heroPercent: {
-    color: theme.sacred.sacred,
-    fontFamily: serifFamily,
-    fontSize: 48,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  heroPercentMark: {
-    fontSize: 32,
-  },
-  progressTrack: {
-    backgroundColor: theme.surfaces.border,
-    borderRadius: 2,
-    height: 2,
-    overflow: 'hidden',
-    width: '100%',
-  },
-  progressFill: {
-    backgroundColor: theme.sacred.sacred,
-    height: '100%',
-  },
+    /* TODAY'S SESSION CARD */
+    sessionCard: {
+      backgroundColor: mushafPalette.paper,
+      borderColor: mushafPalette.goldLine,
+      borderWidth: 1,
+      borderRadius: 22,
+      padding: 18,
+      marginBottom: 16,
+    },
+    sessionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: 14,
+    },
+    sessionTitle: {
+      fontSize: 21,
+      color: mushafPalette.ink,
+      fontFamily: display.bold,
+      fontWeight: '700',
+    },
+    sessionMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+    },
+    sessionTime: {
+      fontSize: 13,
+      color: mushafPalette.muted,
+      fontFamily: display.semibold,
+      fontWeight: '600',
+    },
 
-  // SESSION CARD STYLES
-  sessionCard: {
-    backgroundColor: theme.surfaces.surfaceElevated,
-    borderColor: theme.surfaces.border,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    color: theme.text.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  sessionItemCount: {
-    color: theme.sacred.sacred,
-    fontFamily: serifFamily,
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  breakdownContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  pill: {
-    backgroundColor: theme.surfaces.background,
-    borderColor: theme.sacred.sacred,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pillText: {
-    color: theme.sacred.sacred,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  startButton: {
-    backgroundColor: theme.sacred.sacred,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    width: '100%',
-  },
-  startButtonText: {
-    color: theme.surfaces.background,
-    fontFamily: serifFamily,
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  emptyTitle: {
-    color: theme.text.textPrimary,
-    fontFamily: serifFamily,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    color: theme.text.textMuted,
-    fontSize: 14,
-  },
+    /* COUNT BOX ROW */
+    countBoxRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 16,
+    },
 
-  // PRACTICE LINK
-  practiceLinkContainer: {
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  practiceLink: {
-    color: theme.sacred.sacred,
-    fontSize: 14,
-    fontWeight: '600',
-  },
+    /* EMPTY STATE */
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 16,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      color: mushafPalette.ink,
+      fontFamily: display.bold,
+      fontWeight: '700',
+      marginBottom: 6,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: mushafPalette.ink2,
+      fontFamily: display.regular,
+    },
 
-  // VERSE CARD STYLES
-  verseCard: {
-    backgroundColor: theme.surfaces.surfaceElevated,
-    borderColor: theme.surfaces.border,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  verseReference: {
-    color: theme.text.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  verseArabic: {
-    color: theme.text.textPrimary,
-    fontFamily: serifFamily,
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 32,
-    marginBottom: 12,
-    textAlign: 'right',
-  },
-  translation: {
-    color: theme.text.textPrimary,
-    fontSize: 14,
-    fontStyle: 'italic',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  knownWords: {
-    color: theme.text.textMuted,
-    fontSize: 12,
-  },
-
-  // MISC
-  streakText: {
-    color: theme.text.textMuted,
-    fontSize: 13,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  skeletonSpacing: {
-    marginBottom: 12,
-  },
-  skeletonSpacingLarge: {
-    marginBottom: 16,
-  },
-});
+    /* TODAY'S VERSE */
+    verseSection: {
+      marginBottom: 16,
+    },
+    verseTitle: {
+      fontSize: 17,
+      color: mushafPalette.ink,
+      fontFamily: display.bold,
+      fontWeight: '700',
+      marginBottom: 6,
+    },
+    verseArabic: {
+      fontSize: 23,
+      lineHeight: 40,
+      color: mushafPalette.ink,
+      textAlign: 'right',
+      marginBottom: 5,
+    },
+    verseTranslation: {
+      fontSize: 13,
+      color: mushafPalette.ink2,
+      fontFamily: display.regular,
+      lineHeight: 20,
+    },
+  });

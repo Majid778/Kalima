@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -14,6 +15,7 @@ import { VerseTokens } from '../../components/VerseTokens';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { db } from '../../data/database';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
+import { AppIcon } from '../../components/AppIcon';
 import { buildKnownWordMap } from '../../services/arabicNormalize';
 import {
   getLearnedWordStatuses,
@@ -24,6 +26,8 @@ import {
 import { getWordStrength, type StrengthInput } from '../../services/wordStrengthService';
 import { ThemeTokens } from '../../theme/theme';
 import { useTheme } from '../../theme/useTheme';
+import { mushafPalette } from '../../theme/palette';
+import { display } from '../../theme/typography';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -104,39 +108,89 @@ export function ReaderScreen() {
   };
 
   if (isLoading) {
-    return <ReaderSkeleton styles={styles} />;
+    return (
+      <ReaderShell
+        counter="Loading words"
+        onBack={() => navigation.goBack()}
+        styles={styles}
+      >
+        <ReaderSkeleton styles={styles} />
+      </ReaderShell>
+    );
   }
 
   return (
-    <FlatList
-      data={entries}
-      keyExtractor={(entry) => String(entry.wordId)}
-      renderItem={({ item }) => (
-        <ReaderRow
-          entry={item}
-          expanded={expandedWordIds.has(item.wordId)}
-          knownMap={knownMap}
-          onPress={() => toggleExpanded(item.wordId)}
-          styles={styles}
-        />
-      )}
-      contentContainerStyle={[
-        styles.listContent,
-        entries.length === 0 ? styles.emptyListContent : null,
-      ]}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-      ListEmptyComponent={(
-        <EmptyState
-          title="Your reading path will open here."
-          message="Start a session to begin seeing Qur'anic words in context."
-          action={{
-            label: 'Start a session',
-            onPress: () =>
-              navigation.navigate('Tabs', { screen: 'Today' } as never),
-          }}
-        />
-      )}
-    />
+    <ReaderShell
+      counter={`${entries.length} ${entries.length === 1 ? 'word' : 'words'}`}
+      onBack={() => navigation.goBack()}
+      styles={styles}
+    >
+      <FlatList
+        data={entries}
+        keyExtractor={(entry) => String(entry.wordId)}
+        renderItem={({ item }) => (
+          <ReaderRow
+            entry={item}
+            expanded={expandedWordIds.has(item.wordId)}
+            knownMap={knownMap}
+            onPress={() => toggleExpanded(item.wordId)}
+            styles={styles}
+          />
+        )}
+        contentContainerStyle={[
+          styles.listContent,
+          entries.length === 0 ? styles.emptyListContent : null,
+        ]}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={(
+          <EmptyState
+            title="Your reading path will open here."
+            message="Start a session to begin seeing Qur'anic words in context."
+            action={{
+              label: 'Start a session',
+              onPress: () =>
+                navigation.navigate('Tabs', { screen: 'Today' } as never),
+            }}
+          />
+        )}
+      />
+    </ReaderShell>
+  );
+}
+
+function ReaderShell({
+  children,
+  counter,
+  onBack,
+  styles,
+}: {
+  children: React.ReactNode;
+  counter: string;
+  onBack: () => void;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onBack}
+          style={styles.backButton}
+        >
+          <AppIcon
+            name="chevron-left"
+            size={22}
+            color={mushafPalette.ink}
+            strokeWidth={1.8}
+          />
+        </Pressable>
+        <View style={styles.headerCopy}>
+          <Text numberOfLines={1} style={styles.headerTitle}>Reader</Text>
+          <Text style={styles.headerCounter}>{counter}</Text>
+        </View>
+      </View>
+      {children}
+    </SafeAreaView>
   );
 }
 
@@ -246,9 +300,51 @@ function ReaderRow({
 }
 
 const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
+  container: {
+    backgroundColor: mushafPalette.parchment,
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.parchment,
+    borderBottomColor: mushafPalette.goldLine,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  backButton: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerTitle: {
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
+    fontSize: 21,
+    fontWeight: '700',
+    lineHeight: 27,
+  },
+  headerCounter: {
+    color: mushafPalette.muted,
+    fontFamily: display.semibold,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginTop: 1,
+  },
   listContent: {
-    backgroundColor: theme.surfaces.background,
-    paddingHorizontal: 16,
+    backgroundColor: mushafPalette.parchment,
+    paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 32,
   },
@@ -260,10 +356,14 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     height: 12,
   },
   row: {
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 14,
+    borderWidth: 1,
     padding: 16,
   },
   rowPressed: {
-    backgroundColor: theme.surfaces.surfaceElevated,
+    backgroundColor: mushafPalette.paper2,
   },
   rowHeader: {
     alignItems: 'flex-start',
@@ -281,34 +381,39 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     gap: 8,
   },
   reference: {
-    color: theme.action.action,
+    color: mushafPalette.goldDeep,
+    fontFamily: display.bold,
     fontSize: 13,
     fontWeight: '700',
   },
   wordMeta: {
-    color: theme.text.textMuted,
+    color: mushafPalette.muted,
+    fontFamily: display.regular,
     fontSize: 12,
     marginTop: 4,
   },
   noVerseText: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
     fontSize: 14,
     lineHeight: 20,
   },
   reveal: {
-    borderTopColor: theme.surfaces.border,
+    borderTopColor: mushafPalette.goldLine,
     borderTopWidth: 1,
     marginTop: 12,
     paddingTop: 12,
   },
   meaning: {
-    color: theme.text.textPrimary,
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
   },
   transliteration: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
     fontSize: 14,
     fontStyle: 'italic',
     lineHeight: 20,
@@ -318,18 +423,23 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginTop: 16,
   },
   translation: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
   },
   skeletonContainer: {
-    backgroundColor: theme.surfaces.background,
+    backgroundColor: mushafPalette.parchment,
     flex: 1,
-    padding: 16,
+    padding: 18,
     gap: 12,
   },
   skeletonCard: {
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 14,
+    borderWidth: 1,
     gap: 12,
   },
   skeletonLineWide: {

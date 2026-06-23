@@ -19,7 +19,10 @@ export type RootStackParamList = {
   QuizSession: { levelId: number; levelName: string };
   QuizResult: { levelId: number; levelName: string; score: number; total: number };
   TodaySession: undefined;
-  TodayResult: undefined;
+  TodayResult: {
+    sessionWordsShown?: number;
+    comprehensionBefore?: number;
+  };
   Reader: undefined;
 };
 
@@ -39,25 +42,13 @@ export function RootStackNavigator() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="Tabs" component={BottomTabNavigator} />
-      <RootStack.Screen name="WordCard" component={WordCardScreen} options={{ headerShown: true }} />
-      <RootStack.Screen
-        name="PracticeSession"
-        component={PracticeSessionScreen}
-        options={{ headerShown: true }}
-      />
-      <RootStack.Screen
-        name="QuizSession"
-        component={QuizSessionScreen}
-        options={{ headerShown: true }}
-      />
-      <RootStack.Screen
-        name="QuizResult"
-        component={QuizResultScreen}
-        options={{ headerShown: false }}
-      />
-      <RootStack.Screen name="TodaySession" component={TodaySessionScreen} options={{ headerShown: true, title: 'Today' }} />
+      <RootStack.Screen name="WordCard" component={WordCardScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="PracticeSession" component={PracticeSessionScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="QuizSession" component={QuizSessionScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="QuizResult" component={QuizResultScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="TodaySession" component={TodaySessionScreen} options={{ headerShown: false }} />
       <RootStack.Screen name="TodayResult" component={TodayResultScreen} options={{ headerShown: false }} />
-      <RootStack.Screen name="Reader" component={ReaderScreen} options={{ headerShown: true, title: 'Reader' }} />
+      <RootStack.Screen name="Reader" component={ReaderScreen} options={{ headerShown: false }} />
     </RootStack.Navigator>
   );
 }

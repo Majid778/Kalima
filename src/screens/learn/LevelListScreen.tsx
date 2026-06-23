@@ -5,10 +5,12 @@ import {
   Text,
   useWindowDimensions,
   View,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Circle, G } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -26,9 +28,13 @@ import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { getLevelProgressList, type LevelProgressView } from '../../services/progressService';
 import { db } from '../../data/database';
 import { EmptyState, Skeleton } from '../../components/ui';
+import { AppIcon } from '../../components/AppIcon';
+import { Chip } from '../../components/Chip';
 import { hapticLight, hapticSelection, motionValue, SPRINGS } from '../../theme/motion';
 import type { ThemeTokens } from '../../theme/theme';
 import { useTheme } from '../../theme/useTheme';
+import { mushafPalette } from '../../theme/palette';
+import { display } from '../../theme/typography';
 import { buildPathLayout, type PathStationLayout } from './pathLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -88,26 +94,14 @@ export function LevelListScreen() {
   const currentIndex = useMemo(() => getCurrentIndex(levels), [levels]);
   const completedCount = levels.filter((level) => level.completed).length;
   const progressText = levels.length === 0
-    ? '0%'
-    : `${Math.round((completedCount / levels.length) * 100)}%`;
+    ? '0 of 0'
+    : `${completedCount} of ${levels.length}`;
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
     },
   });
-
-  const backdropStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: motionValue(
-          reduceMotion,
-          interpolate(scrollY.value, [0, 700], [0, -72], 'clamp'),
-          0,
-        ),
-      },
-    ],
-  }));
 
   const handleLockedPress = useCallback((levelId: number) => {
     void hapticSelection();
@@ -132,42 +126,50 @@ export function LevelListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Animated.View pointerEvents="none" style={[styles.backdrop, backdropStyle]}>
-          <BackdropGeometry styles={styles} />
-        </Animated.View>
+      <LinearGradient
+        colors={['#241a0b', '#5a4218', '#9a7117', '#d7b659', '#f4e7c0', '#fdf8ee']}
+        locations={[0, 0.26, 0.5, 0.72, 0.9, 1]}
+        start={{ x: 0.5, y: 1 }}
+        end={{ x: 0.5, y: 0 }}
+        style={styles.container}
+      >
         <View style={styles.loadingContent}>
           <Skeleton width={180} height={20} radius={8} />
           <Skeleton width="100%" height={88} radius={18} style={styles.loadingPath} />
           <Skeleton width="76%" height={88} radius={18} />
           <Skeleton width="92%" height={88} radius={18} style={styles.loadingPath} />
         </View>
-      </View>
+      </LinearGradient>
     );
   }
 
   if (levels.length === 0) {
     return (
-      <View style={styles.container}>
-        <Animated.View pointerEvents="none" style={[styles.backdrop, backdropStyle]}>
-          <BackdropGeometry styles={styles} />
-        </Animated.View>
+      <LinearGradient
+        colors={['#241a0b', '#5a4218', '#9a7117', '#d7b659', '#f4e7c0', '#fdf8ee']}
+        locations={[0, 0.26, 0.5, 0.72, 0.9, 1]}
+        start={{ x: 0.5, y: 1 }}
+        end={{ x: 0.5, y: 0 }}
+        style={styles.container}
+      >
         <EmptyState
-          icon="◌"
+          icon="circle-outline"
           title="The path is quiet"
           message="Your learning stations will appear here when levels are available."
           style={styles.emptyState}
         />
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Animated.View pointerEvents="none" style={[styles.backdrop, backdropStyle]}>
-        <BackdropGeometry styles={styles} />
-      </Animated.View>
-
+    <LinearGradient
+      colors={['#241a0b', '#5a4218', '#9a7117', '#d7b659', '#f4e7c0', '#fdf8ee']}
+      locations={[0, 0.26, 0.5, 0.72, 0.9, 1]}
+      start={{ x: 0.5, y: 1 }}
+      end={{ x: 0.5, y: 0 }}
+      style={styles.container}
+    >
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -179,18 +181,9 @@ export function LevelListScreen() {
         ]}
       >
         <View style={styles.header}>
-          <Text style={styles.kicker}>Learn</Text>
-          <Text style={styles.title}>A path through Kalima</Text>
-          <View style={styles.progressRow}>
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${levels.length === 0 ? 0 : (completedCount / levels.length) * 100}%` },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>{progressText}</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Your ascent</Text>
+            <Chip label={progressText} />
           </View>
         </View>
 
@@ -200,15 +193,50 @@ export function LevelListScreen() {
             { width: pathWidth, height: pathLayout.contentHeight },
           ]}
         >
-          {pathLayout.stations.slice(0, -1).map((station, index) => (
-            <PathSegment
-              key={`segment-${station.index}`}
-              from={station}
-              to={pathLayout.stations[index + 1]}
-              theme={theme}
-            />
-          ))}
+          {/* Light halo at the summit */}
+          <View style={styles.lightHalo} />
 
+          {/* Faint rays SVG */}
+          <Svg
+            width={pathWidth}
+            height={220}
+            viewBox={`0 0 ${pathWidth} 220`}
+            style={styles.raysSvg}
+          >
+            <G stroke="#fff6d8" strokeWidth="1.5">
+              <Path d={`M${pathWidth / 2} 30 L${pathWidth / 2 - 54} 0`} />
+              <Path d={`M${pathWidth / 2} 30 L${pathWidth / 2} -10`} />
+              <Path d={`M${pathWidth / 2} 30 L${pathWidth / 2 + 54} 0`} />
+              <Path d={`M${pathWidth / 2} 30 L${pathWidth / 2 - 94} 18`} />
+              <Path d={`M${pathWidth / 2} 30 L${pathWidth / 2 + 94} 18`} />
+            </G>
+          </Svg>
+
+          {/* Curved dotted path */}
+          {pathLayout.stations.length > 1 && (
+            <Svg
+              width={pathWidth}
+              height={pathLayout.contentHeight}
+              viewBox={`0 0 ${pathWidth} ${pathLayout.contentHeight}`}
+              style={styles.pathSvg}
+              pointerEvents="none"
+            >
+              <Path
+                d={`M${pathLayout.stations[pathLayout.stations.length - 1].centerX} ${
+                  pathLayout.stations[pathLayout.stations.length - 1].centerY
+                } Q90 ${pathLayout.contentHeight / 2} ${pathLayout.stations[0].centerX} ${
+                  pathLayout.stations[0].centerY
+                }`}
+                fill="none"
+                stroke="rgba(255,250,230,.55)"
+                strokeWidth="6"
+                strokeDasharray="1 15"
+                strokeLinecap="round"
+              />
+            </Svg>
+          )}
+
+          {/* Render stations in ascending order (reverse) */}
           {pathLayout.stations.map((station, index) => {
             const level = levels[index];
             const state = getStationState(level, index, currentIndex);
@@ -228,7 +256,7 @@ export function LevelListScreen() {
           })}
         </View>
       </Animated.ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -352,26 +380,36 @@ function StationNode({
             state === 'locked' && styles.stationLocked,
           ]}
         >
-          <View style={[
-            styles.nodeHalo,
-            state === 'completed' && styles.nodeHaloCompleted,
-            state === 'current' && styles.nodeHaloCurrent,
-            state === 'locked' && styles.nodeHaloLocked,
-          ]}>
-            <Ionicons
-              name={getStationIcon(state)}
-              size={state === 'locked' ? 23 : 27}
-              color={getStationIconColor(theme, state)}
+          {state === 'completed' && (
+            <LinearGradient
+              colors={['#e9cf83', '#c8973a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.nodeCompletedGradient}
+            >
+              <AppIcon
+                name="check"
+                size={26}
+                color="#241a0d"
+                strokeWidth={2.4}
+              />
+            </LinearGradient>
+          )}
+
+          {state === 'current' && (
+            <Text style={styles.levelNumber}>
+              {level.id}
+            </Text>
+          )}
+
+          {state === 'locked' && (
+            <AppIcon
+              name="lock"
+              size={22}
+              color="#9a7117"
+              strokeWidth={1.8}
             />
-          </View>
-          <Text
-            style={[
-              styles.levelNumber,
-              state === 'locked' && styles.levelNumberLocked,
-            ]}
-          >
-            {level.id}
-          </Text>
+          )}
         </Pressable>
       </Animated.View>
 
@@ -380,76 +418,58 @@ function StationNode({
         station.alignment === 'left' && styles.stationLabelLeft,
         station.alignment === 'right' && styles.stationLabelRight,
       ]}>
-        <Text
-          style={[
-            styles.levelName,
-            state === 'locked' && styles.levelNameLocked,
-          ]}
-          numberOfLines={2}
-        >
-          {level.name}
-        </Text>
-        <Text style={[
-          styles.levelMeta,
-          state === 'locked' && styles.levelMetaLocked,
-        ]}>
-          {state === 'locked'
-            ? 'Not yet revealed'
-            : `${level.wordCount} words · ${coverageText}`}
-        </Text>
-        {bestScore && state === 'completed' ? (
-          <Text style={styles.masteryText}>{bestScore}</Text>
-        ) : null}
-        {showHint ? (
+        {state === 'current' && (
+          <>
+            <Text style={styles.levelName}>
+              {level.name}
+            </Text>
+            <Text style={styles.levelMeta}>
+              {level.wordCount}/{Math.round(level.cumulativeCoverage * 100)}
+            </Text>
+          </>
+        )}
+
+        {state === 'completed' && (
+          <>
+            <Text style={styles.levelName}>
+              {level.name}
+            </Text>
+            <Text style={styles.levelMeta}>
+              {level.wordCount} words
+            </Text>
+            {bestScore && (
+              <Text style={styles.masteryText}>{bestScore}</Text>
+            )}
+          </>
+        )}
+
+        {state === 'unlocked' && (
+          <>
+            <Text style={styles.levelName}>
+              {level.name}
+            </Text>
+            <Text style={styles.levelMeta}>
+              {level.wordCount} words
+            </Text>
+          </>
+        )}
+
+        {state === 'locked' && (
+          <>
+            <Text style={styles.levelNameLocked}>
+              {level.name}
+            </Text>
+            <Text style={styles.levelMetaLocked}>
+              Not yet revealed
+            </Text>
+          </>
+        )}
+
+        {showHint && (
           <Text style={styles.inlineHint}>Continue your journey...</Text>
-        ) : null}
+        )}
       </View>
     </View>
-  );
-}
-
-function PathSegment({
-  from,
-  to,
-  theme,
-}: {
-  from: PathStationLayout;
-  to: PathStationLayout;
-  theme: ThemeTokens;
-}) {
-  const dx = to.centerX - from.centerX;
-  const dy = to.centerY - from.centerY;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const angle = Math.atan2(dy, dx);
-  const left = (from.centerX + to.centerX) / 2 - length / 2;
-  const top = (from.centerY + to.centerY) / 2 - 1;
-
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        left,
-        top,
-        width: length,
-        height: 2,
-        borderRadius: 999,
-        backgroundColor: theme.surfaces.border,
-        opacity: 0.9,
-        transform: [{ rotate: `${angle}rad` }],
-      }}
-    />
-  );
-}
-
-function BackdropGeometry({ styles }: { styles: ReturnType<typeof makeStyles> }) {
-  return (
-    <>
-      <View style={styles.backdropPanelTop} />
-      <View style={styles.backdropPanelBottom} />
-      <View style={styles.backdropLineOne} />
-      <View style={styles.backdropLineTwo} />
-    </>
   );
 }
 
@@ -475,86 +495,9 @@ function getStationState(
   return 'unlocked';
 }
 
-function getStationIcon(state: StationState): keyof typeof Ionicons.glyphMap {
-  switch (state) {
-    case 'completed':
-      return 'checkmark-circle';
-    case 'current':
-      return 'sparkles';
-    case 'locked':
-      return 'eye-off-outline';
-    case 'unlocked':
-    default:
-      return 'ellipse-outline';
-  }
-}
-
-function getStationIconColor(theme: ThemeTokens, state: StationState): string {
-  switch (state) {
-    case 'completed':
-      return theme.text.onSacred;
-    case 'current':
-      return theme.text.onAction;
-    case 'locked':
-      return theme.text.textMuted;
-    case 'unlocked':
-    default:
-      return theme.action.action;
-  }
-}
-
 const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.surfaces.background,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  backdropPanelTop: {
-    position: 'absolute',
-    top: 30,
-    right: -34,
-    width: 172,
-    height: 96,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.sacred.sacredMuted,
-    opacity: 0.12,
-    transform: [{ rotate: '-16deg' }],
-  },
-  backdropPanelBottom: {
-    position: 'absolute',
-    top: 518,
-    left: -46,
-    width: 188,
-    height: 112,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.action.action,
-    opacity: 0.08,
-    transform: [{ rotate: '18deg' }],
-  },
-  backdropLineOne: {
-    position: 'absolute',
-    top: 168,
-    left: -40,
-    width: 220,
-    height: 1,
-    backgroundColor: theme.surfaces.border,
-    opacity: 0.42,
-    transform: [{ rotate: '-18deg' }],
-  },
-  backdropLineTwo: {
-    position: 'absolute',
-    top: 368,
-    right: -54,
-    width: 260,
-    height: 1,
-    backgroundColor: theme.surfaces.border,
-    opacity: 0.34,
-    transform: [{ rotate: '22deg' }],
   },
   scrollContent: {
     paddingTop: 18,
@@ -564,46 +507,44 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     paddingHorizontal: 22,
     paddingBottom: 16,
   },
-  kicker: {
-    color: theme.sacred.sacred,
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
-    color: theme.text.textPrimary,
+    color: '#3a2a12',
     fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 0,
-    marginBottom: 14,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: theme.surfaces.surfaceElevated,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: theme.sacred.sacred,
-  },
-  progressText: {
-    color: theme.text.textSecondary,
-    fontSize: 13,
     fontWeight: '700',
-    minWidth: 42,
-    textAlign: 'right',
+    fontFamily: display.bold,
+    letterSpacing: 0,
   },
   pathStage: {
     alignSelf: 'center',
     position: 'relative',
+    overflow: 'visible',
+  },
+  lightHalo: {
+    position: 'absolute',
+    top: -140,
+    left: '50%',
+    marginLeft: -140,
+    width: 280,
+    height: 200,
+    borderRadius: 140,
+    backgroundColor: 'rgba(255,252,238,.15)',
+    shadowColor: 'rgba(255,252,238,.08)',
+    zIndex: 1,
+  },
+  raysSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    opacity: 0.35,
+  },
+  pathSvg: {
+    position: 'absolute',
+    inset: 0,
   },
   stationWrap: {
     position: 'absolute',
@@ -615,52 +556,47 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     borderRadius: NODE_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.surfaces.surface,
+    backgroundColor: mushafPalette.paper,
     borderWidth: 1,
-    borderColor: theme.surfaces.border,
+    borderColor: mushafPalette.goldLine,
   },
   stationCompleted: {
-    backgroundColor: theme.sacred.sacred,
-    borderColor: theme.sacred.sacred,
+    backgroundColor: mushafPalette.gold,
+    borderColor: mushafPalette.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nodeCompletedGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: NODE_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stationCurrent: {
-    backgroundColor: theme.action.action,
-    borderColor: theme.action.action,
+    backgroundColor: '#fdf6e6',
+    borderColor: mushafPalette.gold,
+    borderWidth: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   stationUnlocked: {
-    backgroundColor: theme.surfaces.surface,
-    borderColor: theme.action.action,
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.gold,
   },
   stationLocked: {
-    backgroundColor: theme.surfaces.surfaceElevated,
-    borderColor: theme.surfaces.border,
-    opacity: 0.72,
-  },
-  nodeHalo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surfaces.surfaceElevated,
-    marginBottom: 3,
-  },
-  nodeHaloCompleted: {
-    backgroundColor: 'rgba(255, 255, 255, 0.24)',
-  },
-  nodeHaloCurrent: {
-    backgroundColor: 'rgba(0, 0, 0, 0.16)',
-  },
-  nodeHaloLocked: {
-    backgroundColor: theme.surfaces.background,
+    backgroundColor: 'rgba(255,255,255,.5)',
+    borderColor: 'rgba(255,255,255,.8)',
+    opacity: 1,
   },
   levelNumber: {
-    color: theme.text.textPrimary,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  levelNumberLocked: {
-    color: theme.text.textMuted,
+    color: mushafPalette.goldDeep,
+    fontSize: 30,
+    fontWeight: '700',
+    fontFamily: display.bold,
   },
   stationLabel: {
     width: 168,
@@ -674,35 +610,49 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     alignItems: 'flex-end',
   },
   levelName: {
-    color: theme.text.textPrimary,
+    color: mushafPalette.ink,
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: display.bold,
     lineHeight: 19,
     textAlign: 'center',
   },
   levelNameLocked: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
+    fontSize: 15,
+    fontWeight: '800',
+    fontFamily: display.bold,
+    lineHeight: 19,
+    textAlign: 'center',
   },
   levelMeta: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: display.semibold,
     marginTop: 4,
     textAlign: 'center',
   },
   levelMetaLocked: {
-    color: theme.text.textMuted,
+    color: mushafPalette.muted,
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: display.semibold,
+    marginTop: 4,
+    textAlign: 'center',
   },
   masteryText: {
-    color: theme.sacred.sacred,
+    color: mushafPalette.gold,
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: display.bold,
     marginTop: 4,
   },
   inlineHint: {
-    color: theme.text.textSecondary,
+    color: mushafPalette.ink2,
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: display.semibold,
     marginTop: 6,
     textAlign: 'center',
   },

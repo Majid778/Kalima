@@ -1,5 +1,5 @@
-import React, { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
-import { View, ActivityIndicator, StyleSheet, Pressable, Text } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Pressable, Text, SafeAreaView } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -20,9 +20,11 @@ import { getLearnedWordStatuses, introduceWords } from '../../services/practiceS
 import { getLocalToday } from '../../services/sm2';
 import { db } from '../../data/database';
 import { WordCard } from '../../components/WordCard';
-import { Button } from '../../components/ui';
+import { AppIcon } from '../../components/AppIcon';
+import { PrimaryCTA } from '../../components/PrimaryCTA';
 import { useStreakStore } from '../../stores/streakStore';
-import { colors } from '../../theme/colors';
+import { mushafPalette } from '../../theme/palette';
+import { display } from '../../theme/typography';
 import { buildKnownWordMap } from '../../services/arabicNormalize';
 import type { WordStrength } from '../../services/wordStrengthService';
 
@@ -91,25 +93,6 @@ export function WordCardScreen() {
     return () => { mounted = false; };
   }, [currentWord]);
 
-  // Update header with level name and position indicator
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerTitle: levelName,
-      headerRight: () =>
-        words.length > 0 ? (
-          <View style={styles.headerRight}>
-            <Animated.Text style={styles.positionText}>
-              Word {currentIndex + 1} of {words.length}
-            </Animated.Text>
-          </View>
-        ) : null,
-      headerStyle: { backgroundColor: colors.background },
-      headerTintColor: colors.text,
-      headerBackTitle: '',
-    });
-  }, [navigation, levelName, currentIndex, words.length]);
-
   const goToNext = useCallback(() => {
     setCurrentIndex((i) => {
       const nextIndex = Math.min(i + 1, words.length - 1);
@@ -155,76 +138,143 @@ export function WordCardScreen() {
     transform: [{ translateX: translateX.value }],
   }));
 
+  const renderHeader = (counter: string) => (
+    <View style={styles.header}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+      >
+        <AppIcon
+          name="chevron-left"
+          size={22}
+          color={mushafPalette.ink}
+          strokeWidth={1.8}
+        />
+      </Pressable>
+      <View style={styles.headerCopy}>
+        <Text numberOfLines={1} style={styles.headerTitle}>{levelName}</Text>
+        <Text style={styles.headerCounter}>{counter}</Text>
+      </View>
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <SafeAreaView style={styles.container}>
+        {renderHeader('Loading words')}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={mushafPalette.gold} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (words.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <Animated.Text style={styles.emptyText}>
-          No words in this level yet.
-        </Animated.Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        {renderHeader('No words')}
+        <View style={styles.loadingContainer}>
+          <Text style={styles.emptyText}>
+            No words in this level yet.
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.cardWrapper, animatedStyle]}>
-          <WordCard
-            word={currentWord}
-            rootSiblings={rootSiblings}
-            knownMap={knownMap}
-            onSelectWord={selectWord}
-          />
-        </Animated.View>
-      </GestureDetector>
+    <SafeAreaView style={styles.container}>
+      {renderHeader(`Word ${currentIndex + 1} of ${words.length}`)}
+      <View style={styles.cardArea}>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+            <WordCard
+              word={currentWord}
+              rootSiblings={rootSiblings}
+              knownMap={knownMap}
+              onSelectWord={selectWord}
+            />
+          </Animated.View>
+        </GestureDetector>
+      </View>
       <View style={styles.quizButtonContainer}>
-        <Button
-          label="Take the quiz →"
+        <PrimaryCTA
+          label="Take the quiz"
+          arrow={true}
           onPress={() => navigation.navigate('QuizSession', { levelId, levelName })}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: 12,
+    backgroundColor: mushafPalette.parchment,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.parchment,
+    borderBottomColor: mushafPalette.goldLine,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  backButton: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldLine,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerTitle: {
+    color: mushafPalette.ink,
+    fontFamily: display.bold,
+    fontSize: 21,
+    fontWeight: '700',
+    lineHeight: 27,
+  },
+  headerCounter: {
+    color: mushafPalette.muted,
+    fontFamily: display.semibold,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginTop: 1,
+  },
+  cardArea: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
   cardWrapper: {
     flex: 1,
   },
-  headerRight: {
-    marginRight: 8,
-  },
-  positionText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
   emptyText: {
-    color: colors.textMuted,
+    color: mushafPalette.muted,
+    fontFamily: display.regular,
     fontSize: 16,
   },
   quizButtonContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    backgroundColor: mushafPalette.parchment,
+    borderTopColor: mushafPalette.goldLine,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
   },
 });

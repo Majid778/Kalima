@@ -1,11 +1,13 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/useTheme';
-import { serifFamily } from '../theme/typography';
+import { display } from '../theme/typography';
+import { mushafPalette } from '../theme/palette';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LevelListScreen } from '../screens/learn/LevelListScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { AppIcon } from '../components/AppIcon';
 
 export type BottomTabParamList = {
   Home: undefined;
@@ -15,39 +17,40 @@ export type BottomTabParamList = {
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
-  Home: { active: 'home',                 inactive: 'home-outline' },
-  Learn: { active: 'book',                inactive: 'book-outline' },
-  You:  { active: 'person-circle',        inactive: 'person-circle-outline' },
+const TAB_ICONS: Record<string, 'home' | 'book' | 'person'> = {
+  Home: 'home',
+  Learn: 'book',
+  You: 'person',
 };
 
 export function BottomTabNavigator() {
   const theme = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: theme.action.action,
-        tabBarInactiveTintColor: theme.text.textMuted,
+        tabBarActiveTintColor: mushafPalette.gold,
+        tabBarInactiveTintColor: mushafPalette.muted,
         tabBarStyle: {
-          backgroundColor: theme.surfaces.surface,
-          borderTopColor: theme.surfaces.border,
+          backgroundColor: mushafPalette.paper,
+          borderTopColor: mushafPalette.goldLine,
+          borderTopWidth: 1,
         },
-        headerStyle: {
-          backgroundColor: theme.surfaces.background,
+        headerShown: false,
+        tabBarIcon: ({ color }) => {
+          const iconName = TAB_ICONS[route.name];
+          return <AppIcon name={iconName} size={27} color={color} />;
         },
-        headerTintColor: theme.text.textPrimary,
-        headerTitleStyle: { fontFamily: serifFamily, color: theme.text.textPrimary },
-        headerShadowVisible: false,
-        tabBarIcon: ({ color, size, focused }) => {
-          const icons = TAB_ICONS[route.name];
-          const iconName = focused ? icons.active : icons.inactive;
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
+        tabBarLabel: ({ color }) => (
+          <Text style={{ fontSize: 12, fontWeight: '600', color, fontFamily: display.semibold }}>
+            {route.name}
+          </Text>
+        ),
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-      <Tab.Screen name="Learn" component={LevelListScreen} options={{ title: 'Learn' }} />
-      <Tab.Screen name="You" component={ProfileScreen} options={{ title: 'You' }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Learn" component={LevelListScreen} />
+      <Tab.Screen name="You" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
