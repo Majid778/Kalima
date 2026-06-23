@@ -41,6 +41,13 @@
 - Cycle 3 in flight: implement Mushaf Manuscript as the DEFAULT theme on Today + Journey (parchment cream, deep gold accent, serif display numerals/titles/CTAs, gold hairline rules, manuscript verse card; no neon). codex-implementer a1ec9bee3b4164b59. Then verify on web preview + redeploy. Emerald Geometric = next alternate to prototype if Boss wants to compare.
 - Mockup palette refs in next-steps history / mockups/index.html sections "01" and "09".
 
+## IA OVERHAUL (2026-06-23) — Boss: "too many tabs, user will be lost, not satisfying"
+- Decision: **collapse 6 tabs → 3: Home · Learn · You** (Boss chose the aggressive option).
+- Home = NEW merged screen (Journey % hero + Today session card + Today's Verse + practice-due). Learn = LevelListScreen path + quiz launched from WordCard (Quiz tab removed). You = ProfileScreen.
+- Sessions stay as STACK screens (TodaySession/PracticeSession/QuizSession pushed). Only risk handled: Quiz was only launchable from the Quiz tab → added "Take the quiz" CTA on WordCard.
+- codex-implementer aba568eff29796129. Then verify Home on web preview (the "satisfying" payoff lives there) + iterate + redeploy.
+- Now-unused after this: TodayHomeScreen, JourneyScreen, PracticeHomeScreen, QuizHomeScreen (kept as files, dropped from tabs).
+
 ## NEXT: frontend polish cycles to Quality Bar (the "especially the frontend" ask)
 Polish targets spotted (ranked):
 1. **Hero metric reads 0%** — only 6/1500 words "known" → rounds to 0%. Seed more `known` progress so the comprehension % shows a motivating non-zero number (it's THE hero metric).

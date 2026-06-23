@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Pressable, Text } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -20,6 +20,7 @@ import { getLearnedWordStatuses, introduceWords } from '../../services/practiceS
 import { getLocalToday } from '../../services/sm2';
 import { db } from '../../data/database';
 import { WordCard } from '../../components/WordCard';
+import { Button } from '../../components/ui';
 import { useStreakStore } from '../../stores/streakStore';
 import { colors } from '../../theme/colors';
 import { buildKnownWordMap } from '../../services/arabicNormalize';
@@ -184,6 +185,12 @@ export function WordCardScreen() {
           />
         </Animated.View>
       </GestureDetector>
+      <View style={styles.quizButtonContainer}>
+        <Button
+          label="Take the quiz →"
+          onPress={() => navigation.navigate('QuizSession', { levelId, levelName })}
+        />
+      </View>
     </View>
   );
 }
@@ -213,5 +220,11 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.textMuted,
     fontSize: 16,
+  },
+  quizButtonContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 });
