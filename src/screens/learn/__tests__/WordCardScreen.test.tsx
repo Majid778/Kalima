@@ -31,17 +31,28 @@ jest.mock('react-native-gesture-handler', () => ({
 
 jest.mock('react-native-reanimated', () => {
   const { Text: RNText, View: RNView } = jest.requireActual('react-native');
+  const ease = (x: number) => x;
+  const Easing = { linear: ease, ease, quad: ease, sin: ease, inOut: () => ease, out: () => ease, bezier: () => ease };
 
   return {
     __esModule: true,
     default: {
       Text: RNText,
       View: RNView,
+      createAnimatedComponent: (c: unknown) => c,
     },
+    Easing,
+    interpolate: (value: unknown) => value,
     runOnJS: (fn: Function) => fn,
     useAnimatedStyle: (callback: () => object) => callback(),
+    useReducedMotion: () => true,
     useSharedValue: (value: unknown) => ({ value }),
+    withRepeat: (value: unknown) => value,
+    withDelay: (_d: unknown, value: unknown) => value,
+    withSequence: (...args: unknown[]) => args[0],
+    withSpring: (value: unknown) => value,
     withTiming: (value: unknown) => value,
+    cancelAnimation: () => {},
   };
 });
 

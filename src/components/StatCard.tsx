@@ -28,7 +28,8 @@ const styles = StyleSheet.create({
     backgroundColor: mushafPalette.paper,
     borderRadius: 22,
     borderWidth: 1,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     shadowColor: 'rgba(120, 90, 30, 0.08)',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
@@ -38,14 +39,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    justifyContent: 'center',
+    marginBottom: 3,
   },
   value: {
     fontSize: 27,
-    marginLeft: 12,
+    marginLeft: 6,
   },
   label: {
     fontSize: 11,
     color: mushafPalette.muted,
+    textAlign: 'center',
   },
 });

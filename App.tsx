@@ -19,6 +19,32 @@ if (Platform.OS !== 'web') {
   useSQLiteContext = sqlite.useSQLiteContext;
 }
 
+// Web preview only: render the app inside a centered phone-sized device frame so
+// it reads like the mockup instead of stretching full-bleed across the browser.
+// On a narrow viewport (a real phone) the frame fills the screen with no chrome.
+if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('kalima-phone-frame')) {
+  const style = document.createElement('style');
+  style.id = 'kalima-phone-frame';
+  style.textContent = `
+    html, body { height: 100%; margin: 0; }
+    body { overflow: hidden; background: #2f3239; display: flex; align-items: center; justify-content: center; }
+    #root {
+      flex: none;
+      width: min(430px, 100vw);
+      height: min(100vh, 924px);
+      border-radius: 42px;
+      overflow: hidden;
+      box-shadow: 0 26px 70px rgba(0,0,0,0.5);
+      display: flex;
+    }
+    @media (max-width: 480px) {
+      body { background: #f3ead4; }
+      #root { width: 100vw; height: 100%; border-radius: 0; box-shadow: none; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // Navigation chrome (header bar, screen background) follows the active app theme,
 // so the header is parchment in the Mushaf theme and dark in the dark alternate.
 function AppContent() {

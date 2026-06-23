@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { display } from '../theme/typography';
 
 interface Segment<T extends string> {
   label: string;
@@ -30,7 +30,13 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
           >
-            <Text style={[styles.label, isSelected && styles.labelSelected]}>
+            <Text
+              style={[
+                styles.label,
+                { fontFamily: display.semibold },
+                isSelected && styles.labelSelected,
+              ]}
+            >
               {segment.label}
             </Text>
           </TouchableOpacity>
@@ -43,24 +49,29 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#fbf6ea',
+    borderWidth: 1,
+    borderColor: '#ddc893',
+    padding: 3,
   },
   segment: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    backgroundColor: colors.surfaceLight,
+    borderRadius: 9,
+    backgroundColor: 'transparent',
   },
   segmentSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#b8860b',
   },
   label: {
-    color: colors.textMuted,
+    color: '#5c4e30',
     fontSize: 14,
     fontWeight: '600',
   },
   labelSelected: {
-    color: '#FFFFFF',
+    color: '#fffaf0',
   },
 });

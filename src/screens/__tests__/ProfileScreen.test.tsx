@@ -72,23 +72,24 @@ describe('ProfileScreen', () => {
     expect(useSettingsStore.getState().arabicFontSize).toBe('small');
   });
 
+  // Switch order: [0] Daily reminder, [1] Theme, [2] Show Transliteration, [3] Auto-play.
   test('toggling switch updates showTransliteration to false', () => {
     const { getAllByRole } = render(<ProfileScreen />);
-    const switchElement = getAllByRole('switch')[1];
+    const switchElement = getAllByRole('switch')[2];
     fireEvent(switchElement, 'valueChange', false);
     expect(useSettingsStore.getState().showTransliteration).toBe(false);
   });
 
   test('toggling auto-play switch updates autoPlayAudio to true', () => {
     const { getAllByRole } = render(<ProfileScreen />);
-    const switchElement = getAllByRole('switch')[2];
+    const switchElement = getAllByRole('switch')[3];
     fireEvent(switchElement, 'valueChange', true);
     expect(useSettingsStore.getState().autoPlayAudio).toBe(true);
   });
 
   test('toggling theme switch updates theme to mushaf', () => {
     const { getAllByRole } = render(<ProfileScreen />);
-    const switchElement = getAllByRole('switch')[0];
+    const switchElement = getAllByRole('switch')[1];
     fireEvent(switchElement, 'valueChange', false);
     expect(useSettingsStore.getState().theme).toBe('mushaf');
   });

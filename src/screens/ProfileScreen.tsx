@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView, Share, TextInput } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, Share, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -61,6 +61,8 @@ export function ProfileScreen() {
   const showTransliteration = useSettingsStore((s) => s.showTransliteration);
   const reciterId = useSettingsStore((s) => s.reciterId);
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudio);
+  const notificationsEnabled = useSettingsStore((s) => s.notifications.enabled);
+  const setNotificationPrefs = useSettingsStore((s) => s.setNotificationPrefs);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const setArabicFontSize = useSettingsStore((s) => s.setArabicFontSize);
   const setShowTransliteration = useSettingsStore((s) => s.setShowTransliteration);
@@ -170,9 +172,17 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#fbf2d8', mushafPalette.parchment]}
+        locations={[0, 0.3]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.topGradient}
+        pointerEvents="none"
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarSection}>
-          <AvatarRing percent={quranPercent} initial={userInitial} />
+          <AvatarRing percent={Math.round(quranPercent * 100)} initial={userInitial} />
           <Text style={styles.quranPercentText}>{Math.round(quranPercent * 100)}% of the Qur'an</Text>
           <Text style={styles.userName}>{USER_NAME}</Text>
         </View>
@@ -213,6 +223,17 @@ export function ProfileScreen() {
           </View>
         </View>
 
+        <View style={styles.settingsPreview}>
+          <View style={styles.previewRowLast}>
+            <Text style={styles.previewLabel}>Daily reminder</Text>
+            <GoldToggle
+              value={notificationsEnabled}
+              onValueChange={(enabled) => setNotificationPrefs({ enabled })}
+              accessibilityLabel="Daily reminder"
+            />
+          </View>
+        </View>
+
         <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Display</Text>
 
         <View style={styles.row}>
@@ -232,7 +253,7 @@ export function ProfileScreen() {
           />
         </View>
 
-        <View style={styles.row}>
+        <View style={styles.rowStacked}>
           <Text style={styles.rowLabel}>Arabic Font Size</Text>
           <SegmentedControl
             segments={FONT_SIZE_SEGMENTS}
@@ -257,7 +278,7 @@ export function ProfileScreen() {
 
         <Text style={[styles.sectionHeader, styles.sectionSpacing]}>Audio</Text>
 
-        <View style={styles.row}>
+        <View style={styles.rowStacked}>
           <View style={styles.rowTextBlock}>
             <Text style={styles.rowLabel}>Reciter</Text>
             <Text style={styles.rowHint}>{selectedReciter.name}</Text>
@@ -366,6 +387,29 @@ export function ProfileScreen() {
   );
 }
 
+function GoldToggle({
+  value,
+  onValueChange,
+  accessibilityLabel,
+}: {
+  value: boolean;
+  onValueChange: (val: boolean) => void;
+  accessibilityLabel: string;
+}) {
+  return (
+    <TouchableOpacity
+      accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ checked: value }}
+      activeOpacity={0.8}
+      onPress={() => onValueChange(!value)}
+      style={[toggleStyles.track, value ? toggleStyles.trackOn : toggleStyles.trackOff]}
+    >
+      <View style={[toggleStyles.thumb, value ? toggleStyles.thumbOn : toggleStyles.thumbOff]} />
+    </TouchableOpacity>
+  );
+}
+
 function WeekBar({ filled }: { filled: boolean }) {
   if (filled) {
     return (
@@ -381,8 +425,8 @@ function WeekBar({ filled }: { filled: boolean }) {
 }
 
 function AvatarRing({ percent, initial }: { percent: number; initial: string }) {
-  const circumference = 2 * Math.PI * 38;
-  const offset = circumference - (percent / 100) * circumference;
+  const circumference = 2 * Math.PI * 44;
+  const offset = circumference - (Math.max(0, Math.min(100, percent)) / 100) * circumference;
 
   return (
     <View style={avatarStyles.avatarRingContainer}>
@@ -393,17 +437,17 @@ function AvatarRing({ percent, initial }: { percent: number; initial: string }) 
             <Stop offset="100%" stopColor="#946c10" />
           </SvgLinearGradient>
         </defs>
-        <Circle cx="48" cy="48" r="38" fill="none" stroke={mushafPalette.goldRing} strokeWidth="8" />
+        <Circle cx="48" cy="48" r="44" fill="none" stroke={mushafPalette.goldRing} strokeWidth="8" />
         <Circle
           cx="48"
           cy="48"
-          r="38"
+          r="44"
           fill="none"
           stroke="url(#avatarGrad)"
           strokeWidth="8"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           transform="rotate(-90 48 48)"
         />
       </Svg>
@@ -455,7 +499,6 @@ const avatarStyles = StyleSheet.create({
     height: 96,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
   avatarSvg: {
     position: 'absolute',
@@ -470,9 +513,36 @@ const avatarStyles = StyleSheet.create({
   },
   avatarInitial: {
     fontSize: 34,
-    fontWeight: '700',
     color: mushafPalette.goldDeep,
     fontFamily: display.bold,
+  },
+});
+
+const toggleStyles = StyleSheet.create({
+  track: {
+    width: 44,
+    height: 26,
+    borderRadius: 999,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  trackOn: {
+    backgroundColor: mushafPalette.gold,
+  },
+  trackOff: {
+    backgroundColor: mushafPalette.goldRing,
+  },
+  thumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+  },
+  thumbOn: {
+    alignSelf: 'flex-end',
+  },
+  thumbOff: {
+    alignSelf: 'flex-start',
   },
 });
 
@@ -648,6 +718,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: mushafPalette.goldLine,
   },
+  rowStacked: {
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+    gap: 12,
+  },
   rowTextBlock: {
     flex: 1,
     marginRight: 16,
@@ -716,38 +793,45 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     flex: 1,
     backgroundColor: mushafPalette.parchment,
   },
+  topGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 220,
+  },
   content: {
+    paddingTop: 6,
     paddingBottom: 36,
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingTop: 6,
     paddingHorizontal: 24,
-    marginBottom: 8,
   },
   statsRow: {
     flexDirection: 'row',
     gap: 11,
     paddingHorizontal: 22,
-    marginBottom: 13,
+    marginTop: 16,
   },
   quranPercentText: {
     fontSize: 12,
-    fontWeight: '700',
     color: mushafPalette.goldDeep,
-    marginBottom: 2,
+    marginTop: 6,
     fontFamily: display.bold,
   },
   userName: {
     fontSize: 24,
-    fontWeight: '700',
     color: mushafPalette.ink,
+    marginTop: 1,
     fontFamily: display.bold,
   },
   weekCard: {
     marginHorizontal: 22,
-    marginBottom: 16,
-    padding: 15,
+    marginTop: 13,
+    padding: 16,
+    paddingBottom: 17,
     backgroundColor: mushafPalette.paper,
     borderColor: mushafPalette.goldLine,
     borderRadius: 22,
@@ -757,6 +841,34 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  settingsPreview: {
+    marginHorizontal: 22,
+    marginTop: 16,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+  },
+  previewRowLast: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+  },
+  previewLabel: {
+    fontSize: 15,
+    color: mushafPalette.ink,
+    fontFamily: display.medium,
+  },
+  previewValue: {
+    fontSize: 14,
+    color: mushafPalette.muted,
+    fontFamily: display.regular,
   },
   weekLabel: {
     fontSize: 12,
@@ -824,6 +936,13 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: mushafPalette.goldLine,
+  },
+  rowStacked: {
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: mushafPalette.goldLine,
+    gap: 12,
   },
   rowTextBlock: {
     flex: 1,

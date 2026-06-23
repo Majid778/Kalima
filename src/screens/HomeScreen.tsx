@@ -25,7 +25,6 @@ import { Skeleton } from '../components/ui';
 import { ProgressRing } from '../components/ProgressRing';
 import { PrimaryCTA } from '../components/PrimaryCTA';
 import { CountBox } from '../components/CountBox';
-import { Chip } from '../components/Chip';
 import { ArabicText } from '../components/ArabicText';
 import { AppIcon } from '../components/AppIcon';
 import { mushafPalette } from '../theme/palette';
@@ -132,8 +131,10 @@ export function HomeScreen() {
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           {/* Greeting skeleton */}
-          <Skeleton height={12} width={120} />
-          <Skeleton height={26} width={80} style={{ marginTop: 6 }} />
+          <View style={styles.headerRow}>
+            <Skeleton height={13} width={120} />
+            <Skeleton height={26} width={80} style={{ marginTop: 6 }} />
+          </View>
 
           {/* Progress ring skeleton */}
           <Skeleton
@@ -145,10 +146,10 @@ export function HomeScreen() {
 
           {/* Card skeleton */}
           <Skeleton
-            height={180}
+            height={196}
             width="100%"
-            radius={14}
-            style={{ marginTop: 18 }}
+            radius={22}
+            style={{ marginTop: 18, marginHorizontal: 22 }}
           />
         </ScrollView>
       </SafeAreaView>
@@ -161,16 +162,16 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* GREETING */}
-        <View style={styles.greetingRow}>
+        {/* HEADER ROW (greeting + name left, streak chip right) */}
+        <View style={styles.headerRow}>
           <View style={styles.greetingColumn}>
             <Text style={styles.greeting}>Assalamu alaikum</Text>
             <Text style={styles.name}>Majid</Text>
           </View>
-          <Chip
-            icon="flame"
-            label={`${currentStreak} days`}
-          />
+          <View style={styles.streakChip}>
+            <AppIcon name="flame" size={15} color="#a9760d" />
+            <Text style={styles.streakChipLabel}>{currentStreak} days</Text>
+          </View>
         </View>
 
         {/* PROGRESS RING */}
@@ -226,7 +227,8 @@ export function HomeScreen() {
               {/* CTA BUTTON */}
               <PrimaryCTA
                 label="Start reading"
-                arrow={true}
+                arrow={false}
+                gleam
                 onPress={() => navigation.navigate('TodaySession')}
               />
             </>
@@ -268,17 +270,16 @@ const makeStyles = (theme: ThemeTokens) =>
       backgroundColor: mushafPalette.parchment,
     },
     content: {
-      paddingHorizontal: 24,
       paddingTop: 6,
       paddingBottom: 32,
     },
 
-    /* GREETING */
-    greetingRow: {
+    /* HEADER ROW */
+    headerRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 0,
+      paddingHorizontal: 24,
     },
     greetingColumn: {
       flex: 1,
@@ -286,21 +287,34 @@ const makeStyles = (theme: ThemeTokens) =>
     greeting: {
       fontSize: 13,
       color: mushafPalette.muted,
-      fontFamily: display.semibold,
-      marginBottom: 2,
+      fontFamily: display.regular,
     },
     name: {
       fontSize: 26,
       color: mushafPalette.ink,
       fontFamily: display.bold,
-      fontWeight: '700',
+    },
+    streakChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      backgroundColor: '#fbf0d4',
+      borderWidth: 1,
+      borderColor: mushafPalette.goldSoft,
+    },
+    streakChipLabel: {
+      fontSize: 13,
+      color: mushafPalette.goldDeep,
+      fontFamily: display.semibold,
     },
 
     /* PROGRESS RING */
     ringContainer: {
       alignItems: 'center',
-      marginTop: 32,
-      marginBottom: 18,
+      marginTop: 14,
     },
     ringCaption: {
       fontSize: 13,
@@ -316,19 +330,23 @@ const makeStyles = (theme: ThemeTokens) =>
       borderWidth: 1,
       borderRadius: 22,
       padding: 18,
-      marginBottom: 16,
+      marginHorizontal: 22,
+      marginTop: 18,
+      shadowColor: 'rgba(120, 90, 30, 1)',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 2,
     },
     sessionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'baseline',
-      marginBottom: 14,
     },
     sessionTitle: {
       fontSize: 21,
       color: mushafPalette.ink,
       fontFamily: display.bold,
-      fontWeight: '700',
     },
     sessionMeta: {
       flexDirection: 'row',
@@ -338,14 +356,14 @@ const makeStyles = (theme: ThemeTokens) =>
     sessionTime: {
       fontSize: 13,
       color: mushafPalette.muted,
-      fontFamily: display.semibold,
-      fontWeight: '600',
+      fontFamily: display.regular,
     },
 
     /* COUNT BOX ROW */
     countBoxRow: {
       flexDirection: 'row',
       gap: 10,
+      marginTop: 14,
       marginBottom: 16,
     },
 
@@ -358,7 +376,6 @@ const makeStyles = (theme: ThemeTokens) =>
       fontSize: 18,
       color: mushafPalette.ink,
       fontFamily: display.bold,
-      fontWeight: '700',
       marginBottom: 6,
     },
     emptySubtitle: {
@@ -369,26 +386,25 @@ const makeStyles = (theme: ThemeTokens) =>
 
     /* TODAY'S VERSE */
     verseSection: {
-      marginBottom: 16,
+      marginHorizontal: 22,
+      marginTop: 16,
     },
     verseTitle: {
       fontSize: 17,
       color: mushafPalette.ink,
       fontFamily: display.bold,
-      fontWeight: '700',
       marginBottom: 6,
     },
     verseArabic: {
       fontSize: 23,
-      lineHeight: 40,
+      lineHeight: 43,
       color: mushafPalette.ink,
       textAlign: 'right',
-      marginBottom: 5,
     },
     verseTranslation: {
       fontSize: 13,
       color: mushafPalette.ink2,
       fontFamily: display.regular,
-      lineHeight: 20,
+      marginTop: 5,
     },
   });

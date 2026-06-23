@@ -44,7 +44,7 @@ import { AppIcon } from '../../components/AppIcon';
 import { Chip } from '../../components/Chip';
 import { ArabicText } from '../../components/ArabicText';
 import { mushafPalette } from '../../theme/palette';
-import { display, naskh } from '../../theme/typography';
+import { display } from '../../theme/typography';
 import { useSettingsStore } from '../../stores/settingsStore';
 import {
   recordEvent,
@@ -625,8 +625,6 @@ export function TodaySessionScreen() {
         <Text style={styles.translationText}>{translation}</Text>
       )}
 
-      <View style={styles.divider} />
-
       <View style={styles.learningSection}>
         <Text style={styles.eyebrow}>{"the word you're learning"}</Text>
         <ArabicText style={styles.targetWord} color={mushafPalette.goldDeep}>
@@ -689,6 +687,8 @@ export function TodaySessionScreen() {
             </Animated.View>
           </GestureDetector>
         </View>
+
+        <View style={styles.buttonSpacer} />
 
         {!sessionState.revealed ? (
           <Pressable style={styles.revealButton} onPress={handleRevealPress}>
@@ -759,7 +759,7 @@ const makeStyles = () => StyleSheet.create({
     backgroundColor: SESSION_BG,
     paddingHorizontal: 22,
     paddingTop: 8,
-    paddingBottom: 28,
+    paddingBottom: 30,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -775,11 +775,12 @@ const makeStyles = () => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 12,
+    paddingTop: 2,
   },
   topIconButton: {
     width: 42,
     height: 42,
+    marginVertical: -10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -788,6 +789,7 @@ const makeStyles = () => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,.12)',
     borderRadius: 3,
     overflow: 'hidden',
+    marginTop: 16,
   },
   progressFill: {
     height: 5,
@@ -796,7 +798,10 @@ const makeStyles = () => StyleSheet.create({
   cardStage: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 24,
+    paddingVertical: 16,
+  },
+  buttonSpacer: {
+    height: 6,
   },
   activeCard: {
     minHeight: 430,
@@ -816,9 +821,9 @@ const makeStyles = () => StyleSheet.create({
   floatingCard: {
     backgroundColor: mushafPalette.paper,
     borderRadius: 26,
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 22 },
     shadowOpacity: 0.4,
@@ -828,17 +833,15 @@ const makeStyles = () => StyleSheet.create({
   cardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    justifyContent: 'space-between',
   },
   cardIconButton: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   surahRef: {
-    flex: 1,
     color: mushafPalette.ink,
     fontFamily: display.semibold,
     fontSize: 16,
@@ -848,10 +851,10 @@ const makeStyles = () => StyleSheet.create({
   ayahText: {
     color: mushafPalette.ink,
     fontSize: 31,
-    lineHeight: 52,
+    lineHeight: 60,
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 14,
+    marginTop: 18,
+    marginBottom: 18,
   },
   translationText: {
     color: mushafPalette.ink2,
@@ -860,31 +863,27 @@ const makeStyles = () => StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
   },
-  divider: {
-    height: 1,
-    backgroundColor: mushafPalette.goldLine,
-    marginTop: 20,
-    marginBottom: 16,
-  },
   learningSection: {
     alignItems: 'center',
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: mushafPalette.goldLine,
   },
   eyebrow: {
     color: mushafPalette.muted,
-    fontFamily: display.semibold,
+    fontFamily: display.bold,
     fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
   },
   targetWord: {
     color: mushafPalette.goldDeep,
-    fontFamily: naskh.bold,
     fontSize: 26,
     lineHeight: 42,
-    fontWeight: '700',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 7,
   },
   meaningText: {
     color: mushafPalette.ink2,
@@ -934,7 +933,7 @@ const makeStyles = () => StyleSheet.create({
     overflow: 'hidden',
   },
   knewItButton: {
-    paddingVertical: 18,
+    paddingVertical: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -10,6 +10,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient, Stop, Circle, G, Line } from 'react-native-svg';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -43,18 +44,19 @@ interface ResultStats {
 }
 
 function GlowRing({ delay }: { delay: number }) {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(0.55);
+  // Mockup: glow keyframe scale .6 -> 1, opacity 0 -> .85 -> .6 over 1.3s, delay .1s.
+  const scale = useSharedValue(0.6);
+  const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (reduceMotion) {
       scale.value = 1;
-      opacity.value = 0.55;
+      opacity.value = 0.6;
       return;
     }
-    scale.value = withDelay(delay, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
-    opacity.value = withDelay(delay, withTiming(0.55, { duration: 600 }));
+    scale.value = withDelay(delay, withTiming(1, { duration: 1300, easing: Easing.out(Easing.cubic) }));
+    opacity.value = withDelay(delay, withTiming(0.6, { duration: 1300 }));
   }, [delay, reduceMotion, scale, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -69,11 +71,85 @@ function GlowRing({ delay }: { delay: number }) {
           position: 'absolute',
           width: 164,
           height: 164,
-          borderRadius: 82,
         },
         animStyle,
       ]}
-    />
+      pointerEvents="none"
+    >
+      <Svg width={164} height={164} viewBox="0 0 164 164">
+        <Defs>
+          <RadialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#dcb04a" stopOpacity={0.55} />
+            <Stop offset="65%" stopColor="#dcb04a" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={82} cy={82} r={82} fill="url(#glowGrad)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+function RaysBurst({ delay }: { delay: number }) {
+  // Mockup: a thin gold conic ring. Native approximation = SVG spokes that
+  // scale+rotate in (.4 scale / -22deg -> 1 / 0deg) and hold at opacity .5.
+  const scale = useSharedValue(0.4);
+  const rotate = useSharedValue(-22);
+  const opacity = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reduceMotion) {
+      scale.value = 1;
+      rotate.value = 0;
+      opacity.value = 0.5;
+      return;
+    }
+    scale.value = withDelay(delay, withTiming(1, { duration: 1500, easing: Easing.bezier(0.2, 0.7, 0.3, 1) }));
+    rotate.value = withDelay(delay, withTiming(0, { duration: 1500, easing: Easing.bezier(0.2, 0.7, 0.3, 1) }));
+    opacity.value = withDelay(delay, withTiming(0.5, { duration: 1500 }));
+  }, [delay, reduceMotion, scale, rotate, opacity]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
+    opacity: opacity.value,
+  }));
+
+  // 16 spokes around the circle, drawn as short radial lines in the gold band.
+  const spokes = Array.from({ length: 16 }, (_, i) => (i * 360) / 16);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          width: 240,
+          height: 240,
+        },
+        animStyle,
+      ]}
+      pointerEvents="none"
+    >
+      <Svg width={240} height={240} viewBox="0 0 240 240">
+        <G stroke="rgba(220,176,74,0.55)" strokeWidth={2}>
+          {spokes.map((angle) => {
+            const rad = (angle * Math.PI) / 180;
+            const inner = 47;
+            const outer = 84;
+            const cx = 120;
+            const cy = 120;
+            return (
+              <Line
+                key={angle}
+                x1={cx + Math.cos(rad) * inner}
+                y1={cy + Math.sin(rad) * inner}
+                x2={cx + Math.cos(rad) * outer}
+                y2={cy + Math.sin(rad) * outer}
+              />
+            );
+          })}
+        </G>
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -114,23 +190,29 @@ function RippleRing({ delay }: { delay: number }) {
   );
 }
 
-function MoteParticle({ left, size, delay }: { left: number; size: number; delay: number }) {
+function MoteParticle({ id, left, size, delay }: { id: string; left: number; size: number; delay: number }) {
+  // Mockup: mote 2.6s ease-out infinite, translateY 0 -> -220 + scale 1 -> .35,
+  // opacity 0 -> .95 (at 18%) -> 0; radial-gradient fill #f3dd9a -> #c8973a.
   const translateY = useSharedValue(0);
-  const opacity = useSharedValue(1);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+  const gradId = `mote-${id}`;
 
   useEffect(() => {
     if (reduceMotion) {
       translateY.value = -220;
+      scale.value = 0.35;
       opacity.value = 0;
       return;
     }
-    translateY.value = withDelay(delay, withRepeat(withTiming(-220, { duration: 3000, easing: Easing.out(Easing.quad) }), -1, false));
-    opacity.value = withDelay(delay, withRepeat(withTiming(0, { duration: 3000 }), -1, false));
-  }, [delay, reduceMotion, translateY, opacity]);
+    translateY.value = withDelay(delay, withRepeat(withTiming(-220, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false));
+    scale.value = withDelay(delay, withRepeat(withTiming(0.35, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false));
+    opacity.value = withDelay(delay, withRepeat(withTiming(0, { duration: 2600 }), -1, false));
+  }, [delay, reduceMotion, translateY, scale, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
     opacity: opacity.value,
   }));
 
@@ -143,12 +225,21 @@ function MoteParticle({ left, size, delay }: { left: number; size: number; delay
           bottom: 0,
           width: size,
           height: size,
-          borderRadius: size / 2,
-          backgroundColor: '#c8973a',
         },
         animStyle,
       ]}
-    />
+      pointerEvents="none"
+    >
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Defs>
+          <RadialGradient id={gradId} cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#f3dd9a" />
+            <Stop offset="100%" stopColor="#c8973a" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={`url(#${gradId})`} />
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -247,14 +338,15 @@ export function TodayResultScreen() {
       <LinearGradient colors={['#fdf3d6', mushafPalette.parchment]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.75 }} style={styles.background}>
         <View style={styles.content}>
           <View style={styles.tickStack}>
-            <GlowRing delay={200} />
+            <MoteParticle id="a" left={30} size={7} delay={200} />
+            <MoteParticle id="b" left={46} size={5} delay={900} />
+            <MoteParticle id="c" left={62} size={8} delay={500} />
+            <MoteParticle id="d" left={70} size={5} delay={1400} />
+            <MoteParticle id="e" left={38} size={6} delay={1100} />
+            <GlowRing delay={100} />
+            <RaysBurst delay={150} />
             <RippleRing delay={400} />
             <RippleRing delay={1150} />
-            <MoteParticle left={30} size={7} delay={200} />
-            <MoteParticle left={46} size={5} delay={900} />
-            <MoteParticle left={62} size={8} delay={500} />
-            <MoteParticle left={70} size={5} delay={1400} />
-            <MoteParticle left={38} size={6} delay={1100} />
             <TickCircle delay={900} />
           </View>
 
@@ -362,7 +454,7 @@ const makeStyles = (theme: any) =>
       borderColor: mushafPalette.goldSoft,
     },
     hasanatValue: {
-      fontSize: 23,
+      fontSize: 20,
       fontWeight: '800',
       fontFamily: display.extrabold,
       color: mushafPalette.goldDeep,
@@ -394,7 +486,7 @@ const makeStyles = (theme: any) =>
       shadowRadius: 8,
     },
     cardValue: {
-      fontSize: 25,
+      fontSize: 19,
       fontWeight: '700',
       fontFamily: display.bold,
       color: mushafPalette.ink,

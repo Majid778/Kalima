@@ -18,7 +18,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({ percent, size = 196,
   const displayLabel = centerLabel !== undefined ? centerLabel : `${Math.round(percent)}%`;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={styles.svg}>
         <defs>
           <LinearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   label: {
-    fontSize: 50,
+    fontSize: 35,
     fontWeight: '800',
     color: '#946c10',
   },

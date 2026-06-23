@@ -72,17 +72,19 @@ export default function OnboardingScreen() {
 
   const renderLoadingStep = () => (
     <View style={styles.copy}>
-      <Text style={[styles.title, { fontFamily: display.bold }]}>Preparing your first word</Text>
-      <Text style={styles.subtitle}>Kalima is finding a real Qur'anic word to begin with.</Text>
+      <Text style={[styles.title, { fontFamily: display.extrabold }]}>Preparing your first word</Text>
+      <Text style={[styles.subtitle, { fontFamily: display.regular }]}>
+        Finding a real Qur'anic word to begin with.
+      </Text>
     </View>
   );
 
   const renderFirstWinWelcome = () => (
-    <>
+    <View style={styles.welcome}>
       <View style={styles.logoContainer}>
         <LinearGradient
           colors={['#fff6dc', '#f0e2bc']}
-          start={{ x: 0.5, y: 0 }}
+          start={{ x: 0.5, y: 0.18 }}
           end={{ x: 0.5, y: 1 }}
           style={styles.logoCircle}
         >
@@ -90,22 +92,24 @@ export default function OnboardingScreen() {
         </LinearGradient>
       </View>
 
-      <View style={styles.headlineContainer}>
-        <Text style={[styles.headline, { fontFamily: display.extrabold }]}>
-          Understand the Qur'an,{'\n'}word by word
-        </Text>
-      </View>
+      <Text style={[styles.headline, { fontFamily: display.extrabold }]}>
+        Understand the Qur'an,{'\n'}word by word
+      </Text>
+    </View>
+  );
 
-      <View style={styles.ctaContainer}>
-        <PrimaryCTA label="Begin" onPress={() => setStep(1)} />
-        <Pressable
-          onPress={() => completeOnboarding('beginner')}
-          style={styles.textLink}
-        >
-          <Text style={styles.textLinkLabel}>I already have an account</Text>
-        </Pressable>
-      </View>
-    </>
+  const renderWelcomeFooter = () => (
+    <View style={styles.welcomeFooter}>
+      <PrimaryCTA label="Begin" onPress={() => setStep(1)} />
+      <Pressable
+        onPress={() => completeOnboarding('beginner')}
+        style={styles.textLink}
+      >
+        <Text style={[styles.textLinkLabel, { fontFamily: display.semibold }]}>
+          I already have an account
+        </Text>
+      </Pressable>
+    </View>
   );
 
   const renderConceptStep = () => {
@@ -114,8 +118,8 @@ export default function OnboardingScreen() {
     return (
       <>
         <View style={styles.copy}>
-          <Text style={[styles.title, { fontFamily: display.bold }]}>{content.title}</Text>
-          <Text style={styles.subtitle}>{content.subtitle}</Text>
+          <Text style={[styles.title, { fontFamily: display.extrabold }]}>{content.title}</Text>
+          <Text style={[styles.subtitle, { fontFamily: display.regular }]}>{content.subtitle}</Text>
         </View>
 
         <View style={styles.actions}>
@@ -128,7 +132,7 @@ export default function OnboardingScreen() {
               onPress={() => completeOnboarding('beginner')}
               style={styles.secondaryButton}
             >
-              <Text style={styles.secondaryLabel}>Skip</Text>
+              <Text style={[styles.secondaryLabel, { fontFamily: display.semibold }]}>Skip</Text>
             </Pressable>
           ) : null}
         </View>
@@ -139,9 +143,11 @@ export default function OnboardingScreen() {
   const renderLevelStep = () => (
     <>
       <View style={styles.copy}>
-        <Text style={[styles.sectionHeader, { fontFamily: display.semibold }]}>Arabic Level</Text>
-        <Text style={[styles.title, { fontFamily: display.bold }]}>Where should we start?</Text>
-        <Text style={styles.subtitle}>Pick the level that best matches your current Arabic reading ability.</Text>
+        <Text style={[styles.sectionHeader, { fontFamily: display.semibold }]}>Arabic level</Text>
+        <Text style={[styles.title, { fontFamily: display.extrabold }]}>Where should we start?</Text>
+        <Text style={[styles.subtitle, { fontFamily: display.regular }]}>
+          Pick what matches your reading today.
+        </Text>
       </View>
 
       <View style={styles.levelList}>
@@ -149,16 +155,19 @@ export default function OnboardingScreen() {
           <Pressable
             key={choice.level}
             onPress={() => handleComplete(choice.level)}
-            style={styles.levelButton}
+            style={({ pressed }) => [styles.levelButton, pressed && styles.levelButtonPressed]}
           >
             <Text style={[styles.levelButtonLabel, { fontFamily: display.semibold }]}>
               {choice.text}
             </Text>
+            <AppIcon name="arrow-right" size={18} color={mushafPalette.gold} />
           </Pressable>
         ))}
       </View>
     </>
   );
+
+  const isWelcome = hasFirstWin && step === 0;
 
   const renderContent = () => {
     if (isLoading) return renderLoadingStep();
@@ -182,21 +191,23 @@ export default function OnboardingScreen() {
 
   return (
     <LinearGradient
-      colors={['#fdf6e4', mushafPalette.parchment]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
+      colors={[mushafPalette.parchment, '#fdf6e4']}
+      start={{ x: 0.5, y: 1 }}
+      end={{ x: 0.5, y: 0 }}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, isWelcome && styles.welcomeContent]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {renderContent()}
         </ScrollView>
 
-        {!isLoading ? (
+        {isWelcome ? renderWelcomeFooter() : null}
+
+        {!isLoading && !isWelcome ? (
           <View style={styles.dots}>
             {Array.from({ length: totalSteps }, (_, index) => (
               <View key={index} style={[styles.dot, step === index && styles.activeDot]} />
@@ -208,7 +219,7 @@ export default function OnboardingScreen() {
   );
 }
 
-const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
+const makeStyles = (_theme: ThemeTokens) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -220,9 +231,16 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
+  welcomeContent: {
+    paddingHorizontal: 34,
+  },
+  welcome: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 38,
   },
   logoCircle: {
     width: 168,
@@ -236,28 +254,24 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     shadowRadius: 44,
     elevation: 8,
   },
-  headlineContainer: {
-    marginBottom: 38,
-    alignItems: 'center',
-  },
   headline: {
     fontSize: 26,
-    fontWeight: '800',
     color: mushafPalette.ink,
     lineHeight: 32.5,
     letterSpacing: -0.4,
     textAlign: 'center',
+    marginTop: 38,
   },
-  ctaContainer: {
-    gap: 16,
-    alignItems: 'center',
+  welcomeFooter: {
+    paddingHorizontal: 26,
+    paddingBottom: 8,
   },
   textLink: {
-    paddingVertical: 12,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   textLinkLabel: {
     fontSize: 14,
-    fontWeight: '600',
     color: mushafPalette.muted,
     textAlign: 'center',
   },
@@ -265,24 +279,23 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     marginBottom: 32,
   },
   sectionHeader: {
-    color: mushafPalette.ink2,
-    fontSize: 13,
-    fontWeight: '600',
+    color: mushafPalette.muted,
+    fontSize: 12,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 16,
+    letterSpacing: 1.2,
+    marginBottom: 12,
   },
   title: {
     color: mushafPalette.ink,
-    fontSize: 32,
-    fontWeight: '700',
-    lineHeight: 40,
-    marginBottom: 12,
+    fontSize: 28,
+    lineHeight: 35,
+    letterSpacing: -0.4,
+    marginBottom: 10,
   },
   subtitle: {
     color: mushafPalette.ink2,
-    fontSize: 17,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 24,
   },
   actions: {
     gap: 12,
@@ -298,27 +311,35 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     borderColor: mushafPalette.goldLine,
   },
   secondaryLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
     color: mushafPalette.ink2,
   },
   levelList: {
     gap: 12,
   },
   levelButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     borderRadius: 18,
     backgroundColor: mushafPalette.paper,
     borderWidth: 1,
     borderColor: mushafPalette.goldLine,
-    minHeight: 58,
+    minHeight: 60,
+    shadowColor: 'rgba(148, 108, 16, 0.12)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  levelButtonPressed: {
+    backgroundColor: '#fbefcf',
+    borderColor: mushafPalette.gold,
   },
   levelButtonLabel: {
     fontSize: 16,
-    fontWeight: '600',
     color: mushafPalette.ink,
   },
   dots: {

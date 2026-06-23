@@ -10,7 +10,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, G } from 'react-native-svg';
+import Svg, { Path, Circle, G, Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -182,7 +182,7 @@ export function LevelListScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Your ascent</Text>
+            <Text style={styles.title}>Your journey</Text>
             <Chip label={progressText} />
           </View>
         </View>
@@ -193,8 +193,23 @@ export function LevelListScreen() {
             { width: pathWidth, height: pathLayout.contentHeight },
           ]}
         >
-          {/* Light halo at the summit */}
-          <View style={styles.lightHalo} />
+          {/* Light halo at the summit (radial glow into the light) */}
+          <Svg
+            width={320}
+            height={230}
+            viewBox="0 0 320 230"
+            style={styles.lightHalo}
+            pointerEvents="none"
+          >
+            <Defs>
+              <RadialGradient id="summitHalo" cx="50%" cy="50%" r="50%">
+                <Stop offset="0%" stopColor="#fffcee" stopOpacity={0.95} />
+                <Stop offset="45%" stopColor="#fff8e0" stopOpacity={0.35} />
+                <Stop offset="70%" stopColor="#fff8e0" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Ellipse cx={160} cy={115} rx={160} ry={115} fill="url(#summitHalo)" />
+          </Svg>
 
           {/* Faint rays SVG */}
           <Svg
@@ -222,11 +237,7 @@ export function LevelListScreen() {
               pointerEvents="none"
             >
               <Path
-                d={`M${pathLayout.stations[pathLayout.stations.length - 1].centerX} ${
-                  pathLayout.stations[pathLayout.stations.length - 1].centerY
-                } Q90 ${pathLayout.contentHeight / 2} ${pathLayout.stations[0].centerX} ${
-                  pathLayout.stations[0].centerY
-                }`}
+                d={buildDottedPath(pathLayout.stations)}
                 fill="none"
                 stroke="rgba(255,250,230,.55)"
                 strokeWidth="6"
@@ -283,6 +294,9 @@ function StationNode({
   const pressScale = useSharedValue(1);
   const breath = useSharedValue(0);
 
+  // Slow, calm pulse on the current station: a gentle scale loop (1.0 to 1.06
+  // over ~2.4s, ease-in-out) plus a soft pulsing glow ring behind the node.
+  // Reduced motion holds it static.
   useEffect(() => {
     if (state !== 'current' || reduceMotion) {
       cancelAnimation(breath);
@@ -291,7 +305,7 @@ function StationNode({
     }
 
     breath.value = withRepeat(
-      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+      withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
       -1,
       true,
     );
@@ -302,17 +316,19 @@ function StationNode({
   }, [breath, reduceMotion, state]);
 
   const nodeAnimatedStyle = useAnimatedStyle(() => {
-    const breathingScale = state === 'current'
-      ? interpolate(breath.value, [0, 1], [1, 1.035])
+    const pulseScale = state === 'current'
+      ? interpolate(breath.value, [0, 1], [1, 1.06])
       : 1;
 
     return {
-      opacity: state === 'current'
-        ? interpolate(breath.value, [0, 1], [0.96, 1])
-        : 1,
-      transform: [{ scale: pressScale.value * breathingScale }],
+      transform: [{ scale: pressScale.value * pulseScale }],
     };
   });
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(breath.value, [0, 1], [0.45, 0.9]),
+    transform: [{ scale: interpolate(breath.value, [0, 1], [1, 1.18]) }],
+  }));
 
   const handlePressIn = () => {
     pressScale.value = motionValue(
@@ -364,7 +380,13 @@ function StationNode({
         },
       ]}
     >
-      <Animated.View style={nodeAnimatedStyle}>
+      <Animated.View style={[styles.nodeWrap, nodeAnimatedStyle]}>
+        {state === 'current' && !reduceMotion && (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.currentGlowRing, glowAnimatedStyle]}
+          />
+        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${level.name}, ${state === 'locked' ? 'not yet revealed' : 'enter level'}`}
@@ -380,19 +402,23 @@ function StationNode({
             state === 'locked' && styles.stationLocked,
           ]}
         >
-          {state === 'completed' && (
+          {(state === 'completed' || state === 'unlocked') && (
             <LinearGradient
               colors={['#e9cf83', '#c8973a']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={styles.nodeCompletedGradient}
             >
-              <AppIcon
-                name="check"
-                size={26}
-                color="#241a0d"
-                strokeWidth={2.4}
-              />
+              {state === 'completed' ? (
+                <AppIcon
+                  name="check"
+                  size={24}
+                  color="#241a0d"
+                  strokeWidth={2.4}
+                />
+              ) : (
+                <Text style={styles.unlockedNumber}>{level.id}</Text>
+              )}
             </LinearGradient>
           )}
 
@@ -405,7 +431,7 @@ function StationNode({
           {state === 'locked' && (
             <AppIcon
               name="lock"
-              size={22}
+              size={20}
               color="#9a7117"
               strokeWidth={1.8}
             />
@@ -420,10 +446,10 @@ function StationNode({
       ]}>
         {state === 'current' && (
           <>
-            <Text style={styles.levelName}>
+            <Text style={styles.currentName}>
               {level.name}
             </Text>
-            <Text style={styles.levelMeta}>
+            <Text style={styles.currentCount}>
               {level.wordCount}/{Math.round(level.cumulativeCoverage * 100)}
             </Text>
           </>
@@ -484,6 +510,33 @@ function getCurrentIndex(levels: LevelProgressView[]): number {
   return -1;
 }
 
+// Build a smooth dotted path that weaves through every station center,
+// ascending from the bottom-most station up to the summit. Uses each
+// station center as a smooth knot (quadratic segments through midpoints)
+// so the curve passes through every node like the mockup's serpentine.
+function buildDottedPath(stations: PathStationLayout[]): string {
+  if (stations.length < 2) return '';
+
+  // Stations are laid out top (index 0) to bottom (last); draw upward by
+  // starting from the bottom-most center and curving up to the summit.
+  const points = stations
+    .map((station) => ({ x: station.centerX, y: station.centerY }))
+    .reverse();
+
+  let d = `M${points[0].x} ${points[0].y}`;
+
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    d += ` Q${points[i].x} ${points[i].y} ${midX} ${midY}`;
+  }
+
+  const last = points[points.length - 1];
+  d += ` Q${last.x} ${last.y} ${last.x} ${last.y}`;
+
+  return d;
+}
+
 function getStationState(
   level: LevelProgressView,
   index: number,
@@ -526,15 +579,12 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   lightHalo: {
     position: 'absolute',
-    top: -140,
+    top: -40,
     left: '50%',
-    marginLeft: -140,
-    width: 280,
-    height: 200,
-    borderRadius: 140,
-    backgroundColor: 'rgba(255,252,238,.15)',
-    shadowColor: 'rgba(255,252,238,.08)',
-    zIndex: 1,
+    marginLeft: -160,
+    width: 320,
+    height: 230,
+    zIndex: 0,
   },
   raysSvg: {
     position: 'absolute',
@@ -550,47 +600,84 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
   },
-  stationPressable: {
+  nodeWrap: {
     width: NODE_SIZE,
     height: NODE_SIZE,
-    borderRadius: NODE_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  currentGlowRing: {
+    position: 'absolute',
+    width: NODE_SIZE + 18,
+    height: NODE_SIZE + 18,
+    borderRadius: (NODE_SIZE + 18) / 2,
+    backgroundColor: 'rgba(255,238,190,.35)',
+  },
+  stationPressable: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: mushafPalette.paper,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: mushafPalette.goldLine,
   },
   stationCompleted: {
-    backgroundColor: mushafPalette.gold,
-    borderColor: mushafPalette.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   nodeCompletedGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: NODE_SIZE / 2,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stationCurrent: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#fdf6e6',
     borderColor: mushafPalette.gold,
     borderWidth: 3,
-    shadowColor: '#000',
+    shadowColor: 'rgba(120,80,10,.4)',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 1,
+    shadowRadius: 22,
+    elevation: 12,
   },
   stationUnlocked: {
-    backgroundColor: mushafPalette.paper,
-    borderColor: mushafPalette.gold,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 6,
   },
   stationLocked: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: 'rgba(255,255,255,.5)',
-    borderColor: 'rgba(255,255,255,.8)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,.9)',
     opacity: 1,
+    shadowColor: 'rgba(255,250,230,.9)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 0,
   },
   levelNumber: {
     color: mushafPalette.goldDeep,
@@ -598,63 +685,110 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     fontWeight: '700',
     fontFamily: display.bold,
   },
+  unlockedNumber: {
+    color: '#241a0d',
+    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: display.bold,
+  },
   stationLabel: {
     width: 168,
-    marginTop: 10,
+    marginTop: 8,
     alignItems: 'center',
   },
   stationLabelLeft: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   stationLabelRight: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
-  levelName: {
-    color: mushafPalette.ink,
-    fontSize: 15,
-    fontWeight: '800',
+  currentName: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
     fontFamily: display.bold,
-    lineHeight: 19,
+    lineHeight: 17,
     textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  levelNameLocked: {
-    color: mushafPalette.ink2,
-    fontSize: 15,
-    fontWeight: '800',
-    fontFamily: display.bold,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  levelMeta: {
-    color: mushafPalette.ink2,
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: display.semibold,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  levelMetaLocked: {
-    color: mushafPalette.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: display.semibold,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  masteryText: {
-    color: mushafPalette.gold,
+  currentCount: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '700',
     fontFamily: display.bold,
-    marginTop: 4,
+    marginTop: 2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  levelName: {
+    color: '#fff',
+    fontSize: 12.5,
+    fontWeight: '700',
+    fontFamily: display.bold,
+    lineHeight: 16,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  levelNameLocked: {
+    color: 'rgba(255,255,255,.85)',
+    fontSize: 12.5,
+    fontWeight: '700',
+    fontFamily: display.bold,
+    lineHeight: 16,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  levelMeta: {
+    color: 'rgba(255,255,255,.85)',
+    fontSize: 11.5,
+    fontWeight: '600',
+    fontFamily: display.semibold,
+    marginTop: 2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  levelMetaLocked: {
+    color: 'rgba(255,255,255,.7)',
+    fontSize: 11.5,
+    fontWeight: '600',
+    fontFamily: display.semibold,
+    marginTop: 2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  masteryText: {
+    color: mushafPalette.goldSoft,
+    fontSize: 11.5,
+    fontWeight: '700',
+    fontFamily: display.bold,
+    marginTop: 2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   inlineHint: {
-    color: mushafPalette.ink2,
-    fontSize: 12,
+    color: '#fff',
+    fontSize: 11.5,
     fontWeight: '600',
     fontFamily: display.semibold,
     marginTop: 6,
     textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   loadingContent: {
     flex: 1,
