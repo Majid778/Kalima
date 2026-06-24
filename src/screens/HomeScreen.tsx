@@ -248,7 +248,12 @@ export function HomeScreen() {
 
         {/* TODAY'S VERSE */}
         {stats.todaysVerse && (
-          <View style={styles.verseSection}>
+          <Pressable
+            style={styles.verseSection}
+            accessibilityRole="button"
+            accessibilityLabel="Open the reader"
+            onPress={() => navigation.navigate('Reader')}
+          >
             <Text style={styles.verseTitle}>Today's verse</Text>
             <ArabicText style={styles.verseArabic}>
               {stats.todaysVerse.verse.arabicText}
@@ -256,7 +261,7 @@ export function HomeScreen() {
             <Text style={styles.verseTranslation}>
               {stats.todaysVerse.verse.translation}
             </Text>
-          </View>
+          </Pressable>
         )}
       </ScrollView>
 
