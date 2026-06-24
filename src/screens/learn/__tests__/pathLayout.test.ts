@@ -49,11 +49,12 @@ describe('learn path layout', () => {
       bottomPadding: 72,
     });
 
+    // Ascent: index 0 (first level) is at the bottom, later levels climb up.
     expect(layout.stations.map((station) => station.centerY)).toEqual([
-      90,
-      230,
-      370,
       510,
+      370,
+      230,
+      90,
     ]);
     expect(layout.contentHeight).toBe(620);
   });

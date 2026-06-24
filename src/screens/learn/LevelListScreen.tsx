@@ -103,6 +103,22 @@ export function LevelListScreen() {
     },
   });
 
+  // On open, land on the current level rather than the locked summit at the top,
+  // so the climb reads from "where you are" up into what is still to come.
+  const scrollRef = useRef<any>(null);
+  const didInitialScroll = useRef(false);
+  useEffect(() => {
+    if (didInitialScroll.current || currentIndex < 0) return;
+    const station = pathLayout.stations[currentIndex];
+    if (!station) return;
+    didInitialScroll.current = true;
+    const targetY = Math.max(0, station.centerY - 300);
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo?.({ y: targetY, animated: false });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [currentIndex, pathLayout]);
+
   const handleLockedPress = useCallback((levelId: number) => {
     void hapticSelection();
     setHintLevelId(levelId);
@@ -171,6 +187,7 @@ export function LevelListScreen() {
       style={styles.container}
     >
       <Animated.ScrollView
+        ref={scrollRef}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
@@ -374,9 +391,10 @@ function StationNode({
       style={[
         styles.stationWrap,
         {
-          left: Math.max(0, Math.min(station.x - 42, stageWidth - station.size - 84)),
-          top: station.y - 8,
-          width: station.size + 84,
+          // Center the node exactly on the station center so it sits ON the path.
+          left: station.centerX - 84,
+          top: station.centerY - station.size / 2,
+          width: 168,
         },
       ]}
     >

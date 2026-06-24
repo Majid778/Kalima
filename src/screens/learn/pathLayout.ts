@@ -59,9 +59,11 @@ export function buildPathLayout(count: number, options: PathLayoutOptions): Path
   const topPadding = Math.max(0, options.topPadding);
   const bottomPadding = Math.max(0, options.bottomPadding);
 
+  // Index 0 is the FIRST level and sits at the BOTTOM (the earth); later levels
+  // climb upward toward the summit, so the path reads as an ascent into light.
   const stations = Array.from({ length: stationCount }, (_, index) => {
     const cx = centerX + stationX(index, amplitude);
-    const cy = topPadding + radius + stationY(index, options.spacing);
+    const cy = topPadding + radius + stationY(stationCount - 1 - index, options.spacing);
 
     return {
       index,
