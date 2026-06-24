@@ -186,8 +186,20 @@ export function ReaderScreen() {
         )}
       />
       {entries.length > 0 && firstVerse ? (
-        <View style={styles.footer}>
-          <Text style={styles.footerHint}>Tap an ayah to hear it</Text>
+        <Pressable
+          style={styles.footer}
+          accessibilityRole="button"
+          accessibilityLabel="Open the recitation player"
+          onPress={() =>
+            navigation.navigate('NowPlaying', {
+              surahNumber: firstVerse.surahNumber,
+              ayahNumber: firstVerse.ayahNumber,
+              arabicText: firstVerse.arabicText,
+              translation: firstVerse.translation,
+            })
+          }
+        >
+          <Text style={styles.footerHint}>Tap to open the player</Text>
           <View style={styles.footerRight}>
             <Text style={styles.footerPosition}>
               {`${entries.length} of ${knownRows.length}`}
@@ -198,7 +210,7 @@ export function ReaderScreen() {
               size={42}
             />
           </View>
-        </View>
+        </Pressable>
       ) : null}
     </ReaderShell>
   );

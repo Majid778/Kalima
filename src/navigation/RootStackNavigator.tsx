@@ -11,6 +11,10 @@ import { TodaySessionScreen } from '../screens/today/TodaySessionScreen';
 import { TodayResultScreen } from '../screens/today/TodayResultScreen';
 import { ReaderScreen } from '../screens/reader/ReaderScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { CoverageGaugeScreen } from '../screens/coverage/CoverageGaugeScreen';
+import { NowPlayingScreen } from '../screens/audio/NowPlayingScreen';
+import type { NowPlayingParams } from '../screens/audio/NowPlayingScreen';
+import { MilestonesScreen } from '../screens/MilestonesScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -26,6 +30,9 @@ export type RootStackParamList = {
     comprehensionBefore?: number;
   };
   Reader: undefined;
+  CoverageGauge: undefined;
+  NowPlaying: NowPlayingParams;
+  Milestones: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -52,6 +59,9 @@ export function RootStackNavigator() {
       <RootStack.Screen name="TodayResult" component={TodayResultScreen} options={{ headerShown: false }} />
       <RootStack.Screen name="Reader" component={ReaderScreen} options={{ headerShown: false }} />
       <RootStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="CoverageGauge" component={CoverageGaugeScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="NowPlaying" component={NowPlayingScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Milestones" component={MilestonesScreen} options={{ headerShown: false }} />
     </RootStack.Navigator>
   );
 }

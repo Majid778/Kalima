@@ -193,6 +193,28 @@ export function ProfileScreen() {
             ))}
           </View>
         </View>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Milestones"
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('Milestones')}
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: mushafPalette.paper,
+            borderWidth: 1,
+            borderColor: mushafPalette.goldLine,
+            borderRadius: 16,
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            marginTop: 14,
+          }}
+        >
+          <Text style={{ fontSize: 15, color: mushafPalette.ink }}>Milestones</Text>
+          <AppIcon name="chevron-right" size={18} color={mushafPalette.goldDeep} strokeWidth={1.7} />
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -176,12 +177,18 @@ export function HomeScreen() {
 
         {/* PROGRESS RING */}
         <View style={styles.ringContainer}>
-          <ProgressRing
-            percent={displayPercent}
-            size={196}
-            stroke={13}
-            centerLabel={`${displayPercent}%`}
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="See your comprehension details"
+            onPress={() => navigation.navigate('CoverageGauge')}
+          >
+            <ProgressRing
+              percent={displayPercent}
+              size={196}
+              stroke={13}
+              centerLabel={`${displayPercent}%`}
+            />
+          </Pressable>
           <Text style={styles.ringCaption}>
             {stats.knownWords.toLocaleString()} of {stats.totalWords.toLocaleString()} words known
           </Text>
