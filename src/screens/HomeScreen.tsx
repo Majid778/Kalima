@@ -228,7 +228,6 @@ export function HomeScreen() {
               <PrimaryCTA
                 label="Start reading"
                 arrow={false}
-                gleam
                 onPress={() => navigation.navigate('TodaySession')}
               />
             </>
