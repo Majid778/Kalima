@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+  Text as SvgText,
+} from 'react-native-svg';
 import { PrimaryCTA } from '../../components/PrimaryCTA';
 import { AppIcon } from '../../components/AppIcon';
 import { db } from '../../data/database';
@@ -12,7 +19,7 @@ import type { ArabicLevel } from '../../stores/onboardingStore';
 import type { ThemeTokens } from '../../theme/theme';
 import { useTheme } from '../../theme/useTheme';
 import { mushafPalette } from '../../theme/palette';
-import { display } from '../../theme/typography';
+import { display, fonts } from '../../theme/typography';
 import { FirstWinStep } from './FirstWinStep';
 
 const CONCEPT_STEPS = [
@@ -81,32 +88,58 @@ export default function OnboardingScreen() {
 
   const renderFirstWinWelcome = () => (
     <View style={styles.welcome}>
-      <View style={styles.logoContainer}>
-        <LinearGradient
-          colors={['#fff6dc', '#f0e2bc']}
-          start={{ x: 0.5, y: 0.18 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.logoCircle}
+      <Svg width={120} height={120} viewBox="0 0 120 120" style={styles.seal}>
+        <Defs>
+          <SvgLinearGradient id="gg-onb1" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={mushafPalette.goldSoft} />
+            <Stop offset="1" stopColor={mushafPalette.goldDeep} />
+          </SvgLinearGradient>
+        </Defs>
+        <Circle cx="60" cy="60" r="54" fill="none" stroke="url(#gg-onb1)" strokeWidth={1.5} />
+        <Circle
+          cx="60"
+          cy="60"
+          r="46"
+          fill="none"
+          stroke={mushafPalette.goldLine}
+          strokeWidth={1}
+          strokeDasharray="3 5"
+        />
+        <SvgText
+          x="60"
+          y="64"
+          textAnchor="middle"
+          fontFamily={fonts.arabic}
+          fontSize={40}
+          fill={mushafPalette.goldDeep}
         >
-          <AppIcon name="diamond-logo" size={100} color={mushafPalette.gold} />
-        </LinearGradient>
-      </View>
+          {'اقْرَأْ'}
+        </SvgText>
+      </Svg>
+
+      <Text style={[styles.appMark, { fontFamily: fonts.arabic }]}>
+        {'كَلِمَة'}
+      </Text>
+      <Text style={[styles.eyebrow, { fontFamily: display.semibold }]}>Kalima</Text>
 
       <Text style={[styles.headline, { fontFamily: display.extrabold }]}>
-        Understand the Qur'an,{'\n'}word by word
+        Understand the Qur'an,{'\n'}one word at a time
+      </Text>
+      <Text style={[styles.welcomeSubline, { fontFamily: display.regular }]}>
+        The most frequent words first, so meaning arrives faster than you expect.
       </Text>
     </View>
   );
 
   const renderWelcomeFooter = () => (
     <View style={styles.welcomeFooter}>
-      <PrimaryCTA label="Begin" onPress={() => setStep(1)} />
+      <PrimaryCTA label="Begin, bismillah" onPress={() => setStep(1)} />
       <Pressable
-        onPress={() => completeOnboarding('beginner')}
+        onPress={() => completeOnboarding('reader')}
         style={styles.textLink}
       >
         <Text style={[styles.textLinkLabel, { fontFamily: display.semibold }]}>
-          I already have an account
+          I already read Arabic, place me
         </Text>
       </Pressable>
     </View>
@@ -239,28 +272,37 @@ const makeStyles = (_theme: ThemeTokens) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoContainer: {
-    alignItems: 'center',
+  seal: {
+    marginBottom: 4,
   },
-  logoCircle: {
-    width: 168,
-    height: 168,
-    borderRadius: 84,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: 'rgba(184, 134, 11, 0.2)',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 1,
-    shadowRadius: 44,
-    elevation: 8,
+  appMark: {
+    fontSize: 30,
+    color: mushafPalette.ink,
+    textAlign: 'center',
+    marginTop: 24,
+  },
+  eyebrow: {
+    fontSize: 12,
+    color: mushafPalette.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.6,
+    textAlign: 'center',
+    marginTop: 6,
   },
   headline: {
-    fontSize: 26,
+    fontSize: 23,
     color: mushafPalette.ink,
-    lineHeight: 32.5,
+    lineHeight: 32,
     letterSpacing: -0.4,
     textAlign: 'center',
-    marginTop: 38,
+    marginTop: 22,
+  },
+  welcomeSubline: {
+    fontSize: 14,
+    color: mushafPalette.ink2,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 12,
   },
   welcomeFooter: {
     paddingHorizontal: 26,

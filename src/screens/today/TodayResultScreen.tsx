@@ -4,13 +4,14 @@ import {
   Text,
   SafeAreaView,
   ActivityIndicator,
+  Pressable,
   StyleSheet,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, RadialGradient, Stop, Circle, G, Line } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Circle, Path } from 'react-native-svg';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -27,11 +28,9 @@ import { getWordsLearnedCount, getQuranPercent } from '../../services/progressSe
 import { getLocalToday } from '../../services/sm2';
 import { useStreakStore } from '../../stores/streakStore';
 import { mushafPalette } from '../../theme/palette';
-import { display, naskh, fonts } from '../../theme/typography';
+import { display, naskh } from '../../theme/typography';
 import { useTheme } from '../../theme/useTheme';
 import { recordEvent, recordActivityForToday } from '../../services/instrumentationRuntime';
-import { AppIcon } from '../../components/AppIcon';
-import { PrimaryCTA } from '../../components/PrimaryCTA';
 import { ArabicText } from '../../components/ArabicText';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -43,20 +42,22 @@ interface ResultStats {
   hasanat: number;
 }
 
-function GlowRing({ delay }: { delay: number }) {
-  // Mockup: glow keyframe scale .6 -> 1, opacity 0 -> .85 -> .6 over 1.3s, delay .1s.
-  const scale = useSharedValue(0.6);
+// Calm centered gold tick (mockup: 54px gradient-stroke circle + check), wrapped
+// by a single gold ripple ring. Quiet and reverent, not a slot machine.
+function QuietTick({ delay }: { delay: number }) {
+  const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (reduceMotion) {
       scale.value = 1;
-      opacity.value = 0.6;
+      opacity.value = 1;
       return;
     }
-    scale.value = withDelay(delay, withTiming(1, { duration: 1300, easing: Easing.out(Easing.cubic) }));
-    opacity.value = withDelay(delay, withTiming(0.6, { duration: 1300 }));
+    // Mockup k-pop: scale 0 -> 1, opacity 0 -> 1 over .7s with a gentle delay.
+    scale.value = withDelay(delay, withTiming(1, { duration: 700, easing: Easing.bezier(0.2, 0.8, 0.3, 1.2) }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 700 }));
   }, [delay, reduceMotion, scale, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -65,107 +66,42 @@ function GlowRing({ delay }: { delay: number }) {
   }));
 
   return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          width: 164,
-          height: 164,
-        },
-        animStyle,
-      ]}
-      pointerEvents="none"
-    >
-      <Svg width={164} height={164} viewBox="0 0 164 164">
+    <Animated.View style={[tickStyles.tick, animStyle]}>
+      <Svg width={54} height={54} viewBox="0 0 54 54">
         <Defs>
-          <RadialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor="#dcb04a" stopOpacity={0.55} />
-            <Stop offset="65%" stopColor="#dcb04a" stopOpacity={0} />
-          </RadialGradient>
+          <SvgLinearGradient id="gg-result-c" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor="#f0d68a" />
+            <Stop offset="1" stopColor="#c79a30" />
+          </SvgLinearGradient>
         </Defs>
-        <Circle cx={82} cy={82} r={82} fill="url(#glowGrad)" />
-      </Svg>
-    </Animated.View>
-  );
-}
-
-function RaysBurst({ delay }: { delay: number }) {
-  // Mockup: a thin gold conic ring. Native approximation = SVG spokes that
-  // scale+rotate in (.4 scale / -22deg -> 1 / 0deg) and hold at opacity .5.
-  const scale = useSharedValue(0.4);
-  const rotate = useSharedValue(-22);
-  const opacity = useSharedValue(0);
-  const reduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (reduceMotion) {
-      scale.value = 1;
-      rotate.value = 0;
-      opacity.value = 0.5;
-      return;
-    }
-    scale.value = withDelay(delay, withTiming(1, { duration: 1500, easing: Easing.bezier(0.2, 0.7, 0.3, 1) }));
-    rotate.value = withDelay(delay, withTiming(0, { duration: 1500, easing: Easing.bezier(0.2, 0.7, 0.3, 1) }));
-    opacity.value = withDelay(delay, withTiming(0.5, { duration: 1500 }));
-  }, [delay, reduceMotion, scale, rotate, opacity]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
-    opacity: opacity.value,
-  }));
-
-  // 16 spokes around the circle, drawn as short radial lines in the gold band.
-  const spokes = Array.from({ length: 16 }, (_, i) => (i * 360) / 16);
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          width: 240,
-          height: 240,
-        },
-        animStyle,
-      ]}
-      pointerEvents="none"
-    >
-      <Svg width={240} height={240} viewBox="0 0 240 240">
-        <G stroke="rgba(220,176,74,0.55)" strokeWidth={2}>
-          {spokes.map((angle) => {
-            const rad = (angle * Math.PI) / 180;
-            const inner = 47;
-            const outer = 84;
-            const cx = 120;
-            const cy = 120;
-            return (
-              <Line
-                key={angle}
-                x1={cx + Math.cos(rad) * inner}
-                y1={cy + Math.sin(rad) * inner}
-                x2={cx + Math.cos(rad) * outer}
-                y2={cy + Math.sin(rad) * outer}
-              />
-            );
-          })}
-        </G>
+        <Circle cx={27} cy={27} r={24} fill="none" stroke="url(#gg-result-c)" strokeWidth={1.6} opacity={0.8} />
+        <Path
+          d="M18 28 l6 6 l13 -15"
+          fill="none"
+          stroke="url(#gg-result-c)"
+          strokeWidth={3.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </Svg>
     </Animated.View>
   );
 }
 
 function RippleRing({ delay }: { delay: number }) {
+  // Mockup k-ripple: scale .55 -> 1.95, opacity .6 -> 0, 1.9s ease-out infinite.
   const scale = useSharedValue(0.55);
   const opacity = useSharedValue(0.6);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (reduceMotion) {
-      scale.value = 0.55;
+      scale.value = 1;
       opacity.value = 0;
       return;
     }
-    scale.value = withDelay(delay, withRepeat(withTiming(1.95, { duration: 2000, easing: Easing.out(Easing.cubic) }), -1, false));
-    opacity.value = withDelay(delay, withRepeat(withTiming(0, { duration: 2000 }), -1, false));
+    scale.value = withDelay(delay, withRepeat(withTiming(1.95, { duration: 1900, easing: Easing.out(Easing.cubic) }), -1, false));
+    opacity.value = withDelay(delay, withRepeat(withTiming(0, { duration: 1900 }), -1, false));
   }, [delay, reduceMotion, scale, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -173,111 +109,26 @@ function RippleRing({ delay }: { delay: number }) {
     opacity: opacity.value,
   }));
 
-  return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          width: 118,
-          height: 118,
-          borderRadius: 59,
-          borderWidth: 2,
-          borderColor: '#c8973a',
-        },
-        animStyle,
-      ]}
-    />
-  );
+  return <Animated.View style={[tickStyles.rippleRing, animStyle]} pointerEvents="none" />;
 }
 
-function MoteParticle({ id, left, size, delay }: { id: string; left: number; size: number; delay: number }) {
-  // Mockup: mote 2.6s ease-out infinite, translateY 0 -> -220 + scale 1 -> .35,
-  // opacity 0 -> .95 (at 18%) -> 0; radial-gradient fill #f3dd9a -> #c8973a.
-  const translateY = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
-  const reduceMotion = useReducedMotion();
-  const gradId = `mote-${id}`;
-
-  useEffect(() => {
-    if (reduceMotion) {
-      translateY.value = -220;
-      scale.value = 0.35;
-      opacity.value = 0;
-      return;
-    }
-    translateY.value = withDelay(delay, withRepeat(withTiming(-220, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false));
-    scale.value = withDelay(delay, withRepeat(withTiming(0.35, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false));
-    opacity.value = withDelay(delay, withRepeat(withTiming(0, { duration: 2600 }), -1, false));
-  }, [delay, reduceMotion, translateY, scale, opacity]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          left,
-          bottom: 0,
-          width: size,
-          height: size,
-        },
-        animStyle,
-      ]}
-      pointerEvents="none"
-    >
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Defs>
-          <RadialGradient id={gradId} cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor="#f3dd9a" />
-            <Stop offset="100%" stopColor="#c8973a" />
-          </RadialGradient>
-        </Defs>
-        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={`url(#${gradId})`} />
-      </Svg>
-    </Animated.View>
-  );
-}
-
-function TickCircle({ delay }: { delay: number }) {
-  const scale = useSharedValue(0);
-  const reduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (reduceMotion) {
-      scale.value = 1;
-      return;
-    }
-    scale.value = withDelay(delay, withTiming(1, { duration: 500, easing: Easing.elastic(0.7) }));
-  }, [delay, reduceMotion, scale]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        {
-          width: 98,
-          height: 98,
-          borderRadius: 49,
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-        animStyle,
-      ]}
-    >
-      <LinearGradient colors={['#e9cf83', '#c8973a']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ width: 98, height: 98, borderRadius: 49, justifyContent: 'center', alignItems: 'center', shadowColor: 'rgba(168,118,13,.42)', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 1, shadowRadius: 26 }}>
-        <AppIcon name="check" size={48} color="#fffaf0" strokeWidth={2.6} />
-      </LinearGradient>
-    </Animated.View>
-  );
-}
+// Static styles for the tick + ripple (theme-independent, fixed mockup values).
+const tickStyles = StyleSheet.create({
+  tick: {
+    width: 54,
+    height: 54,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rippleRing: {
+    position: 'absolute',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1.5,
+    borderColor: 'rgba(231,210,154,0.6)',
+  },
+});
 
 export function TodayResultScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'TodayResult'>>();
@@ -327,7 +178,7 @@ export function TodayResultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={mushafPalette.gold} />
+          <ActivityIndicator size="large" color={mushafPalette.goldSoft} />
         </View>
       </SafeAreaView>
     );
@@ -335,57 +186,61 @@ export function TodayResultScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#fdf3d6', mushafPalette.parchment]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.75 }} style={styles.background}>
+      <LinearGradient
+        colors={['#2a2110', '#3a2d15']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.background}
+      >
         <View style={styles.content}>
           <View style={styles.tickStack}>
-            <MoteParticle id="a" left={30} size={7} delay={200} />
-            <MoteParticle id="b" left={46} size={5} delay={900} />
-            <MoteParticle id="c" left={62} size={8} delay={500} />
-            <MoteParticle id="d" left={70} size={5} delay={1400} />
-            <MoteParticle id="e" left={38} size={6} delay={1100} />
-            <GlowRing delay={100} />
-            <RaysBurst delay={150} />
             <RippleRing delay={400} />
-            <RippleRing delay={1150} />
-            <TickCircle delay={900} />
+            <QuietTick delay={150} />
           </View>
 
-          <Animated.View style={styles.headerSection} entering={FadeInDown.duration(500).delay(1100)}>
-            <Text style={styles.mashaAllahArabic}>مَا شَاءَ ٱللّٰه</Text>
-            <Text style={styles.mashaAllahEnglish}>MASHA'ALLAH</Text>
-          </Animated.View>
+          <Animated.Text style={styles.mashaAllah} entering={FadeInDown.duration(500).delay(700)}>
+            ما شاء الله
+          </Animated.Text>
 
-          <Animated.View style={styles.hasanatBadge} entering={FadeInDown.duration(500).delay(1350)}>
-            <LinearGradient colors={['#fbeec4', '#f1da95']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.badgeGradient}>
-              <Text style={styles.hasanatValue}>+{stats.hasanat}</Text>
-              <Text style={styles.hasanatLabel}>hasanat</Text>
-            </LinearGradient>
-          </Animated.View>
+          <Animated.View style={styles.divider} entering={FadeInDown.duration(500).delay(850)} />
 
-          <View style={styles.cardsRow}>
-            <Animated.View style={styles.card} entering={FadeInDown.duration(500).delay(1550)}>
-              <Text style={styles.cardValue}>{stats.wordsShown}</Text>
-              <Text style={styles.cardLabel}>words</Text>
-            </Animated.View>
-            <Animated.View style={styles.card} entering={FadeInDown.duration(500).delay(1700)}>
-              <Text style={styles.cardValue}>+{stats.deltaPercent}%</Text>
-              <Text style={styles.cardLabel}>understood</Text>
-            </Animated.View>
-            <Animated.View style={styles.card} entering={FadeInDown.duration(500).delay(1850)}>
-              <Text style={styles.cardValue}>{stats.currentStreak}</Text>
-              <Text style={styles.cardLabel}>day rhythm</Text>
-            </Animated.View>
-          </View>
-
-          <Animated.View style={styles.duaSection} entering={FadeInDown.duration(500).delay(1900)}>
+          <Animated.View style={styles.duaSection} entering={FadeInDown.duration(500).delay(1000)}>
             <ArabicText style={styles.duaArabic}>رَّبِّ زِدْنِى عِلْمًا</ArabicText>
             <Text style={styles.duaTranslation}>My Lord, increase me in knowledge</Text>
           </Animated.View>
 
-          <Animated.View style={styles.buttonContainer} entering={FadeInDown.duration(500).delay(2200)}>
-            <PrimaryCTA label="Done" onPress={() => navigation.navigate('Tabs')} />
+          <Animated.View style={styles.hasanatChip} entering={FadeInDown.duration(500).delay(1200)}>
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#946c10" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 3l2.4 6.1L21 11l-6.6 1.9L12 19l-2.4-6.1L3 11l6.6-1.9z" />
+            </Svg>
+            <Text style={styles.hasanatChipText}>+{stats.hasanat} hasanat written</Text>
+          </Animated.View>
+
+          <Animated.View style={styles.statsRow} entering={FadeInDown.duration(500).delay(1350)}>
+            <Text style={styles.statText}>
+              <Text style={styles.statValue}>{stats.wordsShown}</Text> words
+            </Text>
+            <Text style={styles.statText}>
+              <Text style={styles.statValue}>+{stats.deltaPercent}%</Text> understood
+            </Text>
+            <Text style={styles.statText}>
+              <Text style={styles.statValue}>{stats.currentStreak}</Text> day rhythm
+            </Text>
           </Animated.View>
         </View>
+
+        <Animated.View style={styles.buttonContainer} entering={FadeInDown.duration(500).delay(1500)}>
+          <Pressable onPress={() => navigation.navigate('Tabs')} style={styles.ctaPressable}>
+            <LinearGradient
+              colors={['#e0bd55', '#b88a1e']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.ctaGradient}
+            >
+              <Text style={styles.ctaLabel}>Done</Text>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -395,7 +250,7 @@ const makeStyles = (theme: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: mushafPalette.parchment,
+      backgroundColor: '#2a2110',
     },
     background: {
       flex: 1,
@@ -404,118 +259,111 @@ const makeStyles = (theme: any) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: '#2a2110',
     },
     content: {
       flex: 1,
-      paddingHorizontal: 32,
+      paddingHorizontal: 30,
       alignItems: 'center',
       justifyContent: 'center',
     },
     tickStack: {
       position: 'relative',
-      width: 150,
-      height: 150,
+      width: 54,
+      height: 54,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 26,
     },
-    headerSection: {
-      alignItems: 'center',
-      marginTop: 22,
-      marginBottom: 14,
+    mashaAllah: {
+      fontFamily: naskh.regular,
+      fontSize: 30,
+      color: '#f0d68a',
+      textAlign: 'center',
+      writingDirection: 'rtl',
     },
-    mashaAllahArabic: {
-      fontFamily: naskh.bold,
-      fontSize: 42,
-      fontWeight: '700',
-      color: mushafPalette.ink,
-      lineHeight: 52,
-    },
-    mashaAllahEnglish: {
-      fontSize: 13,
-      fontFamily: display.semibold,
-      color: mushafPalette.muted,
-      marginTop: 4,
-      letterSpacing: 1,
-      fontWeight: '600',
-    },
-    hasanatBadge: {
-      marginTop: 14,
-      marginBottom: 18,
-    },
-    badgeGradient: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: 7,
-      paddingHorizontal: 26,
-      paddingVertical: 12,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: mushafPalette.goldSoft,
-    },
-    hasanatValue: {
-      fontSize: 20,
-      fontWeight: '800',
-      fontFamily: display.extrabold,
-      color: mushafPalette.goldDeep,
-    },
-    hasanatLabel: {
-      fontSize: 14,
-      fontWeight: '600',
-      fontFamily: display.semibold,
-      color: mushafPalette.goldDeep,
-    },
-    cardsRow: {
-      flexDirection: 'row',
-      gap: 11,
-      width: '100%',
-      marginBottom: 18,
-    },
-    card: {
-      flex: 1,
-      backgroundColor: mushafPalette.paper,
-      borderRadius: 22,
-      paddingVertical: 15,
-      paddingHorizontal: 8,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: mushafPalette.goldLine,
-      shadowColor: 'rgba(0,0,0,.04)',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 8,
-    },
-    cardValue: {
-      fontSize: 19,
-      fontWeight: '700',
-      fontFamily: display.bold,
-      color: mushafPalette.ink,
-    },
-    cardLabel: {
-      fontSize: 11,
-      color: mushafPalette.muted,
-      marginTop: 4,
-      fontFamily: display.semibold,
+    divider: {
+      width: 46,
+      height: 1,
+      backgroundColor: 'rgba(231,210,154,0.28)',
+      marginVertical: 24,
     },
     duaSection: {
       alignItems: 'center',
-      marginTop: 30,
-      marginBottom: 40,
     },
     duaArabic: {
-      fontSize: 21,
-      color: mushafPalette.goldDeep,
-      fontFamily: fonts.arabic,
-      fontWeight: '700',
+      fontSize: 38,
+      lineHeight: 63,
+      color: '#f7eccb',
+      textAlign: 'center',
     },
     duaTranslation: {
-      fontSize: 12,
-      color: mushafPalette.muted,
+      fontSize: 13,
+      color: '#d8c79a',
       fontFamily: display.regular,
-      marginTop: 3,
+      fontStyle: 'italic',
+      lineHeight: 20,
+      textAlign: 'center',
+      marginTop: 12,
+    },
+    hasanatChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      marginTop: 34,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 14,
+      backgroundColor: '#fbf0d4',
+      borderWidth: 1,
+      borderColor: mushafPalette.goldSoft,
+    },
+    hasanatChipText: {
+      fontSize: 13,
+      fontWeight: '600',
+      fontFamily: display.semibold,
+      color: mushafPalette.goldDeep,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: 22,
+      marginTop: 18,
+      alignItems: 'center',
+    },
+    statText: {
+      fontSize: 12,
+      color: '#cbb985',
+      fontFamily: display.regular,
+    },
+    statValue: {
+      color: '#f3ead4',
+      fontWeight: '700',
+      fontFamily: display.bold,
     },
     buttonContainer: {
       width: '100%',
-      paddingHorizontal: 0,
+      paddingHorizontal: 30,
+      paddingBottom: 32,
+    },
+    ctaPressable: {
+      borderRadius: 18,
+      overflow: 'hidden',
+      shadowColor: 'rgba(168, 118, 13, 1)',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.34,
+      shadowRadius: 22,
+      elevation: 5,
+    },
+    ctaGradient: {
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    ctaLabel: {
+      fontSize: 20,
+      fontWeight: '700',
+      fontFamily: display.bold,
+      color: '#2a2110',
     },
   });

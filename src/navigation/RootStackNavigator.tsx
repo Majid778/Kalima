@@ -10,10 +10,12 @@ import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { TodaySessionScreen } from '../screens/today/TodaySessionScreen';
 import { TodayResultScreen } from '../screens/today/TodayResultScreen';
 import { ReaderScreen } from '../screens/reader/ReaderScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Tabs: undefined;
+  Settings: undefined;
   WordCard: { levelId: number; levelName: string };
   PracticeSession: undefined;
   QuizSession: { levelId: number; levelName: string };
@@ -49,6 +51,7 @@ export function RootStackNavigator() {
       <RootStack.Screen name="TodaySession" component={TodaySessionScreen} options={{ headerShown: false }} />
       <RootStack.Screen name="TodayResult" component={TodayResultScreen} options={{ headerShown: false }} />
       <RootStack.Screen name="Reader" component={ReaderScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
     </RootStack.Navigator>
   );
 }

@@ -39,6 +39,7 @@ jest.mock('../../../components/ui', () => {
 
   return {
     Card: ({ children }: { children: React.ReactNode }) => <RNView>{children}</RNView>,
+    Chip: ({ children }: { children: React.ReactNode }) => <RNText>{children}</RNText>,
     EmptyState: ({ title }: { title: string }) => <RNText>{title}</RNText>,
     Skeleton: () => <RNView />,
   };

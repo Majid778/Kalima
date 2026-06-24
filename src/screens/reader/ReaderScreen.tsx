@@ -7,16 +7,17 @@ import {
   Text,
   View,
 } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Card, EmptyState, Skeleton } from '../../components/ui';
+import { Card, Chip, EmptyState, Skeleton } from '../../components/ui';
 import { AyahAudioButton } from '../../components/audio/AyahAudioButton';
 import { VerseTokens } from '../../components/VerseTokens';
 import { WordStrengthBadge } from '../../components/WordStrengthBadge';
 import { db } from '../../data/database';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator';
 import { AppIcon } from '../../components/AppIcon';
-import { buildKnownWordMap } from '../../services/arabicNormalize';
+import { buildKnownWordMap, classifyVerseTokens } from '../../services/arabicNormalize';
 import {
   getLearnedWordStatuses,
   getReaderEntries,
@@ -107,10 +108,27 @@ export function ReaderScreen() {
     });
   };
 
+  const knownTally = useMemo(() => {
+    let known = 0;
+    let total = 0;
+    for (const entry of entries) {
+      const verse = entry.verses[0];
+      if (!verse) continue;
+      const tokens = classifyVerseTokens(verse.arabicText, verse.wordPosition, knownMap);
+      for (const { status } of tokens) {
+        total += 1;
+        if (status !== 'neutral') known += 1;
+      }
+    }
+    return { known, total };
+  }, [entries, knownMap]);
+
+  const firstVerse = entries.find((entry) => entry.verses[0])?.verses[0];
+
   if (isLoading) {
     return (
       <ReaderShell
-        counter="Loading words"
+        counter="Loading"
         onBack={() => navigation.goBack()}
         styles={styles}
       >
@@ -142,6 +160,19 @@ export function ReaderScreen() {
           entries.length === 0 ? styles.emptyListContent : null,
         ]}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          entries.length > 0 && knownTally.total > 0 ? (
+            <View style={styles.hintCard}>
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={mushafPalette.goldDeep} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <Circle cx="12" cy="12" r="10" />
+                <Path d="M12 16v-4M12 8h.01" />
+              </Svg>
+              <Text style={styles.hintText}>
+                {`Gold words are ones you have learned. ${knownTally.known} of ${knownTally.total} here are known to you.`}
+              </Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={(
           <EmptyState
             title="Your reading path will open here."
@@ -154,6 +185,21 @@ export function ReaderScreen() {
           />
         )}
       />
+      {entries.length > 0 && firstVerse ? (
+        <View style={styles.footer}>
+          <Text style={styles.footerHint}>Tap an ayah to hear it</Text>
+          <View style={styles.footerRight}>
+            <Text style={styles.footerPosition}>
+              {`${entries.length} of ${knownRows.length}`}
+            </Text>
+            <AyahAudioButton
+              surahNumber={firstVerse.surahNumber}
+              ayahNumber={firstVerse.ayahNumber}
+              size={42}
+            />
+          </View>
+        </View>
+      ) : null}
     </ReaderShell>
   );
 }
@@ -172,22 +218,25 @@ function ReaderShell({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onBack}
-          style={styles.backButton}
-        >
-          <AppIcon
-            name="chevron-left"
-            size={22}
-            color={mushafPalette.ink}
-            strokeWidth={1.8}
-          />
-        </Pressable>
-        <View style={styles.headerCopy}>
-          <Text numberOfLines={1} style={styles.headerTitle}>Reader</Text>
-          <Text style={styles.headerCounter}>{counter}</Text>
+        <View style={styles.headerLeft}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onBack}
+            style={styles.backButton}
+          >
+            <AppIcon
+              name="chevron-left"
+              size={22}
+              color={mushafPalette.ink}
+              strokeWidth={1.8}
+            />
+          </Pressable>
+          <View style={styles.headerCopy}>
+            <Text numberOfLines={1} style={styles.headerTitle}>Reader</Text>
+            <Text numberOfLines={1} style={styles.headerSubtitle}>Words in context</Text>
+          </View>
         </View>
+        <Chip tone="sacred">{counter}</Chip>
       </View>
       {children}
     </SafeAreaView>
@@ -234,22 +283,19 @@ function ReaderRow({
       {({ pressed }) => (
         <Card style={[styles.row, pressed ? styles.rowPressed : null]}>
           <View style={styles.rowHeader}>
-            <View style={styles.referenceBlock}>
-              <View style={styles.referenceLine}>
-                <Text style={styles.reference}>
-                  {primaryVerse ? verseRef(primaryVerse) : 'No verse'}
-                </Text>
-                {primaryVerse ? (
-                  <AyahAudioButton
-                    surahNumber={primaryVerse.surahNumber}
-                    ayahNumber={primaryVerse.ayahNumber}
-                    size={36}
-                  />
-                ) : null}
-              </View>
-              <Text style={styles.wordMeta}>{entry.root ? `Root ${entry.root}` : 'Root unavailable'}</Text>
-            </View>
             <WordStrengthBadge strength={strength} />
+            <View style={styles.ayahChipRow}>
+              {primaryVerse ? (
+                <AyahAudioButton
+                  surahNumber={primaryVerse.surahNumber}
+                  ayahNumber={primaryVerse.ayahNumber}
+                  size={32}
+                />
+              ) : null}
+              <Chip tone="sacred" style={styles.ayahChip}>
+                {primaryVerse ? verseRef(primaryVerse) : 'No verse'}
+              </Chip>
+            </View>
           </View>
 
           {primaryVerse ? (
@@ -269,16 +315,17 @@ function ReaderRow({
             <View style={styles.reveal}>
               <Text style={styles.meaning}>{entry.meaning}</Text>
               <Text style={styles.transliteration}>{entry.transliteration}</Text>
+              <Text style={styles.wordMeta}>{entry.root ? `Root ${entry.root}` : 'Root unavailable'}</Text>
 
               {remainingVerses.map((verse, index) => (
                 <View key={`${verseRef(verse)}:${index}`} style={styles.extraVerse}>
-                  <View style={styles.referenceLine}>
-                    <Text style={styles.reference}>{verseRef(verse)}</Text>
+                  <View style={styles.ayahChipRow}>
                     <AyahAudioButton
                       surahNumber={verse.surahNumber}
                       ayahNumber={verse.ayahNumber}
-                      size={36}
+                      size={32}
                     />
+                    <Chip tone="sacred" style={styles.ayahChip}>{verseRef(verse)}</Chip>
                   </View>
                   <VerseTokens
                     verseText={verse.arabicText}
@@ -311,14 +358,21 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: 12,
+    justifyContent: 'space-between',
     paddingHorizontal: 18,
     paddingVertical: 10,
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
   },
   backButton: {
     alignItems: 'center',
     backgroundColor: mushafPalette.paper,
     borderColor: mushafPalette.goldLine,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
     height: 40,
     justifyContent: 'center',
@@ -329,17 +383,16 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   headerTitle: {
     color: mushafPalette.ink,
-    fontFamily: display.bold,
-    fontSize: 21,
-    fontWeight: '700',
-    lineHeight: 27,
+    fontFamily: display.extrabold,
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 21,
   },
-  headerCounter: {
+  headerSubtitle: {
     color: mushafPalette.muted,
-    fontFamily: display.semibold,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
+    fontFamily: display.regular,
+    fontSize: 11,
+    lineHeight: 15,
     marginTop: 1,
   },
   listContent: {
@@ -366,25 +419,21 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
     backgroundColor: mushafPalette.paper2,
   },
   rowHeader: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  referenceBlock: {
-    flex: 1,
-  },
-  referenceLine: {
+  ayahChipRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
   },
-  reference: {
-    color: mushafPalette.goldDeep,
-    fontFamily: display.bold,
-    fontSize: 13,
-    fontWeight: '700',
+  ayahChip: {
+    minHeight: 24,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
   wordMeta: {
     color: mushafPalette.muted,
@@ -447,5 +496,50 @@ const makeStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   skeletonLine: {
     alignSelf: 'flex-end',
+  },
+  hintCard: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.paper,
+    borderColor: mushafPalette.goldSoft,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  hintText: {
+    color: mushafPalette.ink2,
+    flex: 1,
+    fontFamily: display.regular,
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  footer: {
+    alignItems: 'center',
+    backgroundColor: mushafPalette.parchment,
+    borderTopColor: mushafPalette.goldLine,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 18,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+  },
+  footerHint: {
+    color: mushafPalette.ink2,
+    fontFamily: display.regular,
+    fontSize: 11.5,
+  },
+  footerRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  footerPosition: {
+    color: mushafPalette.muted,
+    fontFamily: display.regular,
+    fontSize: 11,
   },
 });

@@ -10,6 +10,8 @@ export type IconName =
   | 'star'
   | 'check'
   | 'chevron-left'
+  | 'chevron-right'
+  | 'gear'
   | 'arrow-right'
   | 'heart'
   | 'speaker'
@@ -85,6 +87,21 @@ export const AppIcon: React.FC<AppIconProps> = ({ name, size = 24, color = '#000
       return (
         <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M15 18l-6-6 6-6" />
+        </Svg>
+      );
+
+    case 'chevron-right':
+      return (
+        <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M9 6l6 6-6 6" />
+        </Svg>
+      );
+
+    case 'gear':
+      return (
+        <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <Circle cx="12" cy="12" r="3.1" />
+          <Path d="M19.4 13a7.6 7.6 0 000-2l2-1.5-2-3.4-2.4 1a7.6 7.6 0 00-1.7-1l-.4-2.6h-3.8l-.4 2.6a7.6 7.6 0 00-1.7 1l-2.4-1-2 3.4 2 1.5a7.6 7.6 0 000 2l-2 1.5 2 3.4 2.4-1a7.6 7.6 0 001.7 1l.4 2.6h3.8l.4-2.6a7.6 7.6 0 001.7-1l2.4 1 2-3.4z" />
         </Svg>
       );
 
