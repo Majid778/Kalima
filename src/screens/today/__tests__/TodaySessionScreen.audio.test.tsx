@@ -48,6 +48,8 @@ jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(),
   NotificationFeedbackType: {
     Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
   },
 }));
 
@@ -172,21 +174,24 @@ beforeEach(() => {
   });
 });
 
-describe('TodaySessionScreen audio auto-play', () => {
-  test('auto-plays the revealed ayah and stops when advancing to the next item', async () => {
+describe('TodaySessionScreen recognition flow', () => {
+  test('auto-plays the ayah after a correct tap and stops when advancing to the next item', async () => {
     const { getByText } = render(<TodaySessionScreen />);
 
-    await waitFor(() => expect(getByText('Reveal')).toBeTruthy());
+    // First card: the Arabic word كتاب; its meaning "book" appears as a tappable option.
+    await waitFor(() => expect(getByText('book')).toBeTruthy());
 
     expect(playAyah).not.toHaveBeenCalled();
 
-    fireEvent.press(getByText('Reveal'));
+    // Tap the correct meaning -> the answer is revealed and the recited ayah auto-plays.
+    fireEvent.press(getByText('book'));
 
     await waitFor(() => {
       expect(playAyah).toHaveBeenCalledWith('audio://husary/1/2');
     });
 
-    fireEvent.press(getByText('I knew it'));
+    // Continue to the next item -> audio stops.
+    fireEvent.press(getByText('Continue'));
 
     await waitFor(() => {
       expect(stopAudio).toHaveBeenCalled();
