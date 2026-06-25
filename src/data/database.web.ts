@@ -59,15 +59,17 @@ function seedProgressTables(sqlite: SqlJsDatabase): void {
   // done", a band of in-progress learning words, and a few brand-new — so the
   // Today loop still has new + due items.
   const rows: Array<[number, number, number, number, string, string | null, string]> = [];
-  for (let id = 1; id <= 100; id += 1) {
+  // The DB has 110 words across 5 levels (level 1 = ids 1-22). Leave a few level-1
+  // words unseeded so the daily session has brand-new cards; the rest are learned
+  // (review), with a front band due today so the session also surfaces reviews.
+  for (let id = 1; id <= 88; id += 1) {
+    if (id >= 19 && id <= 22) continue; // 4 brand-new level-1 words for the session
     // 'review' is the status getQuranPercent counts as "understood" (occurrence-weighted).
-    rows.push([id, 2.7, 30 + (id % 30), 7, getLocalDate(20 + (id % 30)), getLocalDate(-((id % 14) + 1)), 'review']);
+    const due = id <= 18 ? today : getLocalDate(14 + (id % 21));
+    rows.push([id, 2.7, 20 + (id % 20), 6, due, getLocalDate(-((id % 12) + 1)), 'review']);
   }
-  for (let id = 101; id <= 115; id += 1) {
-    rows.push([id, 2.5, (id % 6) + 1, 2, getLocalDate((id % 5) - 2), getLocalDate(-1), 'learning']);
-  }
-  for (let id = 116; id <= 125; id += 1) {
-    rows.push([id, 2.5, 0, 0, today, null, 'new']);
+  for (let id = 89; id <= 110; id += 1) {
+    rows.push([id, 2.5, (id % 5) + 1, 2, getLocalDate((id % 4) - 1), getLocalDate(-1), 'learning']);
   }
 
   const placeholders = rows.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(',\n');
@@ -86,13 +88,15 @@ function seedProgressTables(sqlite: SqlJsDatabase): void {
         (?, ?, ?, ?),
         (?, ?, ?, ?),
         (?, ?, ?, ?),
+        (?, ?, ?, ?),
         (?, ?, ?, ?)
     `,
     [
       1, 1, 0.95, getLocalDate(-12),
       2, 1, 0.88, getLocalDate(-5),
-      3, 1, 0.6, null,
-      4, 0, null, null,
+      3, 1, 0.7, null,
+      4, 1, null, null,
+      5, 1, null, null,
     ],
   );
 }

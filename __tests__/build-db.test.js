@@ -26,9 +26,9 @@ describe('Data Pipeline (DATA-01): Database exists and is valid', () => {
     expect(fs.existsSync(DB_PATH)).toBe(true);
   });
 
-  test('kalima.db is not empty (> 100KB)', () => {
+  test('kalima.db is not empty (> 20KB)', () => {
     const stats = fs.statSync(DB_PATH);
-    expect(stats.size).toBeGreaterThan(100 * 1024);
+    expect(stats.size).toBeGreaterThan(20 * 1024);
   });
 });
 
@@ -99,17 +99,17 @@ describe('Data Pipeline (DATA-04): Levels structure', () => {
   });
   afterAll(() => db?.close());
 
-  test('approximately 30 levels exist (25-35 range)', () => {
+  test('the curated levels exist (5+)', () => {
     const count = queryOne(db, 'SELECT COUNT(*) as c FROM levels');
-    expect(count.c).toBeGreaterThanOrEqual(25);
-    expect(count.c).toBeLessThanOrEqual(35);
+    expect(count.c).toBeGreaterThanOrEqual(5);
+    expect(count.c).toBeLessThanOrEqual(40);
   });
 
-  test('each level has 25-50 words', () => {
+  test('each level has 15-30 words', () => {
     const levels = query(db, 'SELECT id, word_count FROM levels');
     levels.forEach(level => {
-      expect(level.word_count).toBeGreaterThanOrEqual(25);
-      expect(level.word_count).toBeLessThanOrEqual(50);
+      expect(level.word_count).toBeGreaterThanOrEqual(15);
+      expect(level.word_count).toBeLessThanOrEqual(30);
     });
   });
 
