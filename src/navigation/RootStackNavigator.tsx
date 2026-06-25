@@ -26,6 +26,8 @@ export type RootStackParamList = {
   TodayResult: {
     sessionWordsShown?: number;
     comprehensionBefore?: number;
+    correct?: number;
+    answered?: number;
   };
   Reader: undefined;
   CoverageGauge: undefined;

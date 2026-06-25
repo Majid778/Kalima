@@ -270,6 +270,8 @@ export function TodaySessionScreen() {
   const [, setKnownMap] = useState<Map<string, WordStrength>>();
   const completedRef = useRef(false);
   const gradingRef = useRef(false);
+  const answeredRef = useRef(0);
+  const correctRef = useRef(0);
 
   useEffect(() => {
     const initSession = async () => {
@@ -374,7 +376,11 @@ export function TodaySessionScreen() {
       completeSession('TodayResult');
       recordEvent('practice_session_completed', { totalItems: seq.totalCount });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate('TodayResult', { sessionWordsShown: seq.totalCount });
+      navigation.navigate('TodayResult', {
+        sessionWordsShown: seq.totalCount,
+        correct: correctRef.current,
+        answered: answeredRef.current,
+      });
     },
     [navigation],
   );
@@ -401,6 +407,8 @@ export function TodaySessionScreen() {
 
       const isFirstPresentation = item.reviewCount === 0;
       if (isFirstPresentation && (item.type === 'new' || item.type === 'review')) {
+        answeredRef.current += 1;
+        if (correct) correctRef.current += 1;
         if (item.type === 'new') {
           recordEvent('word_seen', { wordId: item.wordId, word: item.word.arabic });
         }

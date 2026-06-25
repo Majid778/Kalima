@@ -35,7 +35,6 @@ describe('ProfileScreen', () => {
     const { getByText } = render(<ProfileScreen />);
     expect(getByText('mastered')).toBeTruthy();
     expect(getByText('day rhythm')).toBeTruthy();
-    expect(getByText('hours')).toBeTruthy();
   });
 
   test('renders the Memory strength vault heading', () => {

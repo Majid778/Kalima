@@ -180,7 +180,7 @@ export function ReaderScreen() {
             action={{
               label: 'Start a session',
               onPress: () =>
-                navigation.navigate('Tabs', { screen: 'Today' } as never),
+                navigation.navigate('TodaySession'),
             }}
           />
         )}

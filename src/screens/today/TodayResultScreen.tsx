@@ -37,7 +37,8 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface ResultStats {
   wordsShown: number;
-  deltaPercent: number;
+  correct: number;
+  answered: number;
   currentStreak: number;
   hasanat: number;
 }
@@ -151,11 +152,13 @@ export function TodayResultScreen() {
         ]);
 
         const sessionWordsShown = route.params?.sessionWordsShown ?? 30;
-        const deltaPercent = Math.max(0.1, Math.round((sessionWordsShown / 100) * 10) / 10);
+        const answered = route.params?.answered ?? sessionWordsShown;
+        const correct = route.params?.correct ?? answered;
 
         setStats({
           wordsShown: sessionWordsShown,
-          deltaPercent,
+          correct,
+          answered,
           currentStreak: streak,
           hasanat: sessionWordsShown * 10,
         });
@@ -221,7 +224,7 @@ export function TodayResultScreen() {
               <Text style={styles.statValue}>{stats.wordsShown}</Text> words
             </Text>
             <Text style={styles.statText}>
-              <Text style={styles.statValue}>+{stats.deltaPercent}%</Text> understood
+              <Text style={styles.statValue}>{stats.correct}/{stats.answered}</Text> correct
             </Text>
             <Text style={styles.statText}>
               <Text style={styles.statValue}>{stats.currentStreak}</Text> day rhythm

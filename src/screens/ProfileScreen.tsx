@@ -27,27 +27,6 @@ const USER_NAME = 'Majid';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Representative words for the Memory strength vault rows (mirrors the design
-// mockup). The tile counts are driven by real progress data; these illustrative
-// rows give the vault its texture, identical to the locked mockup.
-type StrengthBars = 1 | 2 | 3;
-
-interface VaultWord {
-  arabic: string;
-  gloss: string;
-  bars: StrengthBars;
-}
-
-const SOLID_WORDS: VaultWord[] = [
-  { arabic: 'رَبّ', gloss: 'Lord, Sustainer', bars: 3 },
-  { arabic: 'كِتَاب', gloss: 'Book, Scripture', bars: 3 },
-];
-
-const FRAGILE_WORDS: VaultWord[] = [
-  { arabic: 'صَبْر', gloss: 'Patience', bars: 1 },
-  { arabic: 'عِلْم', gloss: 'Knowledge', bars: 1 },
-];
-
 export function ProfileScreen() {
   const navigation = useNavigation<NavProp>();
   const arabicLevel = useOnboardingStore((s) => s.arabicLevel);
@@ -92,7 +71,6 @@ export function ProfileScreen() {
   );
 
   const userInitial = USER_NAME.charAt(0).toUpperCase();
-  const hoursRead = '2.4';
   const solidCount = wordsMastered;
   const fragileCount = Math.max(0, wordsLearned - wordsMastered);
 
@@ -141,12 +119,6 @@ export function ProfileScreen() {
             label="day rhythm"
             valueColor={mushafPalette.ink}
           />
-          <StatCard
-            icon="clock"
-            value={hoursRead}
-            label="hours"
-            valueColor={mushafPalette.ink}
-          />
         </View>
 
         <View style={styles.vaultHeading}>
@@ -163,34 +135,6 @@ export function ProfileScreen() {
           <View style={[styles.tile, styles.tileFragile]}>
             <Text style={styles.tileValueFragile}>{fragileCount}</Text>
             <Text style={styles.tileLabelFragile}>fragile, review soon</Text>
-          </View>
-        </View>
-
-        <View style={styles.vaultGroup}>
-          <Text style={[styles.groupEyebrow, styles.groupEyebrowGold]}>SOLID, WELL ROOTED</Text>
-          <View style={styles.card}>
-            {SOLID_WORDS.map((word, idx) => (
-              <WordRow
-                key={word.arabic}
-                word={word}
-                tone="solid"
-                showDivider={idx < SOLID_WORDS.length - 1}
-              />
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.vaultGroup}>
-          <Text style={styles.groupEyebrow}>FRAGILE, DUE FOR REVIEW</Text>
-          <View style={[styles.card, styles.cardFragile]}>
-            {FRAGILE_WORDS.map((word, idx) => (
-              <WordRow
-                key={word.arabic}
-                word={word}
-                tone="fragile"
-                showDivider={idx < FRAGILE_WORDS.length - 1}
-              />
-            ))}
           </View>
         </View>
 
@@ -217,43 +161,6 @@ export function ProfileScreen() {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function WordRow({
-  word,
-  tone,
-  showDivider,
-}: {
-  word: VaultWord;
-  tone: 'solid' | 'fragile';
-  showDivider: boolean;
-}) {
-  const arabicColor = tone === 'solid' ? mushafPalette.ink : mushafPalette.ink2;
-  const glossColor = tone === 'solid' ? mushafPalette.ink2 : mushafPalette.muted;
-
-  return (
-    <>
-      <View style={styles.wordRow}>
-        <Text style={[styles.wordArabic, { color: arabicColor }]}>{word.arabic}</Text>
-        <Text style={[styles.wordGloss, { color: glossColor }]}>{word.gloss}</Text>
-        <StrengthBarsGlyph filled={word.bars} />
-      </View>
-      {showDivider && <View style={styles.rowDivider} />}
-    </>
-  );
-}
-
-function StrengthBarsGlyph({ filled }: { filled: StrengthBars }) {
-  return (
-    <View style={styles.barsGlyph}>
-      {[0, 1, 2].map((i) => (
-        <View
-          key={i}
-          style={[styles.bar, i < filled ? styles.barFilled : styles.barEmpty]}
-        />
-      ))}
-    </View>
   );
 }
 
